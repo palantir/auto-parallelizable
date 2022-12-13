@@ -1,0 +1,44 @@
+buildscript {
+    repositories {
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+        gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+    }
+
+    dependencies {
+        classpath 'com.palantir.gradle.jdks:gradle-jdks:0.27.0'
+        classpath 'com.palantir.gradle.jdkslatest:gradle-jdks-latest:0.4.0'
+        classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:1.11.0'
+        classpath 'com.palantir.javaformat:gradle-palantir-java-format:2.28.0'
+        classpath 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.11.0'
+        classpath 'com.palantir.baseline:gradle-baseline-java:4.183.0'
+        classpath 'com.palantir.gradle.gitversion:gradle-git-version:0.15.0'
+        classpath 'gradle.plugin.org.inferred:gradle-processors:3.7.0'
+    }
+}
+
+apply plugin: 'com.palantir.external-publish'
+apply plugin: 'com.palantir.git-version'
+apply plugin: 'com.palantir.consistent-versions'
+apply plugin: 'com.palantir.baseline'
+apply plugin: 'com.palantir.baseline-java-versions'
+apply plugin: 'com.palantir.jdks.latest'
+
+javaVersions {
+    libraryTarget = 11
+    runtime = 17
+}
+
+version gitVersion()
+
+allprojects {
+    repositories {
+        mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+        gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+    }
+
+    group 'com.palantir.gradle.auto-parallelizable'
+    version System.env.CIRCLE_TAG ?: rootProject.version
+
+    apply plugin: 'org.inferred.processors'
+    apply plugin: 'com.palantir.java-format'
+}

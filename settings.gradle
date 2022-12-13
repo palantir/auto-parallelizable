@@ -1,0 +1,3 @@
+rootProject.name = 'auto-parallelizable-root'
+
+include 'auto-parallelizable'
