@@ -16,13 +16,13 @@
 
 package com.palantir.gradle.autoparallelizable;
 
-import java.io.IOException;
-import java.io.Writer;
+import com.palantir.goethe.Goethe;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.TypeSpec;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
-import javax.tools.JavaFileObject;
 
 final class AutoParallelizableProcessor extends AbstractProcessor {
     @Override
@@ -40,14 +40,11 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
             return false;
         }
 
-        try {
-            JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile("Blah");
-            try (Writer writer = sourceFile.openWriter()) {
-                writer.write("class Blah {}");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Couldn't create source file", e);
-        }
+        TypeSpec type = TypeSpec.classBuilder("Blah").build();
+
+        JavaFile javaFile = JavaFile.builder("com.blah", type).build();
+
+        Goethe.formatAndEmit(javaFile, processingEnv.getFiler());
 
         return false;
     }

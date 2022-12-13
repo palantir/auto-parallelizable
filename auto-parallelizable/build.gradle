@@ -3,7 +3,9 @@ apply plugin: 'groovy'
 apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
-    testImplementation localGroovy()
+    implementation 'com.palantir.goethe:goethe:0.9.0'
+
+    testImplementation gradleApi()
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'com.google.testing.compile:compile-testing'

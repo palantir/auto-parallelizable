@@ -32,11 +32,18 @@ import static com.google.testing.compile.CompilationSubject.assertThat
 class AutoParallelizableProcessorTest {
     @Test
     void test() {
-        JavaFileObject source = JavaFileObjects.forSourceString 'com.lol.Lol', /* language=java */ '''
+        JavaFileObject source = JavaFileObjects.forSourceString 'app.Something', /* language=java */ '''
+            package app;
+
             import com.palantir.gradle.autoparallelizable.AutoParallelizable;
+            import org.gradle.api.provider.Property;
             
             @AutoParallelizable
-            class Lol {}
+            class Something {
+                interface Params {
+                    Property<String> getName();
+                }
+            }
         '''.stripIndent(true)
 
         Compilation compilation = Compiler.javac()
@@ -46,11 +53,15 @@ class AutoParallelizableProcessorTest {
         assertThat(compilation).succeeded()
 
         assertThat(compilation)
-                .generatedSourceFile("Blah")
+                .generatedSourceFile("app.SomethingWorkParams")
                 .contentsAsString(StandardCharsets.UTF_8)
                 // language=java
                 .isEqualTo '''
-                    class Blah {}
-                '''.stripIndent(true).strip()
+                    package app;
+
+                    import org.gradle.workers.WorkParameters;
+
+                    interface SomethingWorkParams extends WorkParameters, Something.Params {}
+                '''.stripIndent(true).stripLeading()
     }
 }
