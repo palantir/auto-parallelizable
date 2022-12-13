@@ -71,6 +71,12 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
 
         ClassName workParamsClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkParams");
 
+        emitWorkParams(params, packageName, workParamsClassName);
+
+        emitWorkAction(typeElement, packageName, workParamsClassName);
+    }
+
+    private void emitWorkParams(TypeElement params, String packageName, ClassName workParamsClassName) {
         TypeSpec workParamsType = TypeSpec.interfaceBuilder(workParamsClassName)
                 .addSuperinterface(ClassName.get(WorkParameters.class))
                 .addSuperinterface(params.asType())
@@ -79,7 +85,9 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
         JavaFile workParams = JavaFile.builder(packageName, workParamsType).build();
 
         Goethe.formatAndEmit(workParams, processingEnv.getFiler());
+    }
 
+    private void emitWorkAction(TypeElement typeElement, String packageName, ClassName workParamsClassName) {
         List<ExecutableElement> possibleExecutes = typeElement.getEnclosedElements().stream()
                 .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
                 .map(ExecutableElement.class::cast)
