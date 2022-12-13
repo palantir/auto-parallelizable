@@ -1,0 +1,54 @@
+/*
+ * (c) Copyright 2022 Palantir Technologies Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.palantir.gradle.autoparallelizable;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Set;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.TypeElement;
+import javax.tools.JavaFileObject;
+
+final class AutoParallelizableProcessor extends AbstractProcessor {
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
+        return Set.of(AutoParallelizable.class.getCanonicalName());
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> _annotations, RoundEnvironment roundEnv) {
+        if (roundEnv.processingOver()) {
+            return false;
+        }
+
+        if (roundEnv.getElementsAnnotatedWith(AutoParallelizable.class).isEmpty()) {
+            return false;
+        }
+
+        try {
+            JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile("Blah");
+            try (Writer writer = sourceFile.openWriter()) {
+                writer.write("class Blah {}");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Couldn't create source file", e);
+        }
+
+        return false;
+    }
+}
