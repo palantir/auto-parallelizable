@@ -1,0 +1,8 @@
+apply plugin: 'java-gradle-plugin'
+
+dependencies {
+    implementation gradleApi()
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'com.google.testing.compile:compile-testing'
+}

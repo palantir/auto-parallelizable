@@ -105,16 +105,16 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
         List<ExecutableElement> possibleExecutes = typeElement.getEnclosedElements().stream()
                 .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
                 .map(ExecutableElement.class::cast)
-                .filter(element -> element.getSimpleName().toString().equals("execute"))
+                .filter(element -> element.getSimpleName().toString().equals("action"))
                 .collect(Collectors.toList());
 
-        ExecutableElement _execute = possibleExecutes.get(0);
+        ExecutableElement _action = possibleExecutes.get(0);
 
         MethodSpec workActionExecute = MethodSpec.methodBuilder("execute")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addCode(CodeBlock.builder()
-                        .add("$T.execute(getParameters());", typeElement.asType())
+                        .add("$T.action(getParameters());", typeElement.asType())
                         .build())
                 .build();
 

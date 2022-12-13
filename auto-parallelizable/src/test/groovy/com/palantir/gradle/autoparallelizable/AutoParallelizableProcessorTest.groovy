@@ -36,7 +36,7 @@ class AutoParallelizableProcessorTest {
             package app;
 
             import com.palantir.gradle.autoparallelizable.AutoParallelizable;
-            import org.gradle.api.file.RegularFileProperty;import org.gradle.api.provider.Property;
+            import org.gradle.api.file.RegularFileProperty;import org.gradle.api.provider.Property;import org.gradle.api.tasks.TaskAction;
             
             @AutoParallelizable
             public final class Something {
@@ -51,7 +51,7 @@ class AutoParallelizableProcessorTest {
                     RegularFileProperty getSomeFile();
                 }
                 
-                static void execute(Params params) {
+                static void action(Params params) {
                     System.out.println("Hello " + params.getSomeString().get());
                 }
             }
@@ -88,7 +88,7 @@ class AutoParallelizableProcessorTest {
                     abstract class SomethingWorkAction implements WorkAction<SomethingWorkParams> {
                         @Override
                         public final void execute() {
-                            Something.execute(getParameters());
+                            Something.action(getParameters());
                         }
                     }
                 '''.stripIndent(true).stripLeading()
