@@ -40,6 +40,12 @@ class AutoParallelizableProcessorTest {
             
             @AutoParallelizable
             public final class Something {
+                public abstract class SomethingTask extends SomethingTaskImpl {
+                    public SomethingTask() {
+                        setDescription("lol");
+                    }
+                }
+                
                 interface Params {
                     Property<String> getName();
                 }
