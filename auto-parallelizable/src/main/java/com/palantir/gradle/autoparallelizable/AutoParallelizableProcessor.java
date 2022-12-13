@@ -28,17 +28,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
+import javax.inject.Inject;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.TaskAction;
 import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
+import org.gradle.workers.WorkerExecutor;
 
 final class AutoParallelizableProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(AutoParallelizable.class.getCanonicalName());
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.RELEASE_8;
     }
 
     @Override
@@ -70,10 +80,50 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
                 .toString();
 
         ClassName workParamsClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkParams");
+        ClassName workActionClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkAction");
 
         emitWorkParams(params, packageName, workParamsClassName);
 
         emitWorkAction(typeElement, packageName, workParamsClassName);
+
+        MethodSpec workerExecutor = MethodSpec.methodBuilder("getWorkerExecutor")
+                .addAnnotation(Inject.class)
+                .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
+                .returns(ClassName.get(WorkerExecutor.class))
+                .build();
+
+        CodeBlock.Builder paramsSetters = CodeBlock.builder()
+                .add("$N().noIsolation().submit($T.class, params -> {", workerExecutor, workActionClassName)
+                .indent();
+
+        params.getEnclosedElements().stream()
+                .filter(element -> element.getKind().equals(ElementKind.METHOD))
+                .map(ExecutableElement.class::cast)
+                .forEach(possibleMethod -> {
+                    paramsSetters
+                            .add(
+                                    "params.$L().set($L());",
+                                    possibleMethod.getSimpleName(),
+                                    possibleMethod.getSimpleName())
+                            .build();
+                });
+
+        MethodSpec execute = MethodSpec.methodBuilder("execute")
+                .addAnnotation(TaskAction.class)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addCode(paramsSetters.unindent().add("});").build())
+                .build();
+
+        TypeSpec taskImplType = TypeSpec.classBuilder(typeElement.getSimpleName() + "TaskImpl")
+                .addModifiers(Modifier.ABSTRACT)
+                .superclass(ClassName.get(DefaultTask.class))
+                .addMethod(workerExecutor)
+                .addMethod(execute)
+                .build();
+
+        JavaFile taskImpl = JavaFile.builder(packageName, taskImplType).build();
+
+        Goethe.formatAndEmit(taskImpl, processingEnv.getFiler());
     }
 
     private void emitWorkParams(TypeElement params, String packageName, ClassName workParamsClassName) {

@@ -85,5 +85,30 @@ class AutoParallelizableProcessorTest {
                         }
                     }
                 '''.stripIndent(true).stripLeading()
+
+        assertThat(compilation)
+                .generatedSourceFile("app.SomethingTaskImpl")
+                .contentsAsString(StandardCharsets.UTF_8)
+                // language=java
+                .isEqualTo '''
+                    package app;
+
+                    import javax.inject.Inject;
+                    import org.gradle.api.DefaultTask;
+                    import org.gradle.api.tasks.TaskAction;
+                    import org.gradle.workers.WorkerExecutor;
+
+                    abstract class SomethingTaskImpl extends DefaultTask {
+                        @Inject
+                        protected abstract WorkerExecutor getWorkerExecutor();
+                        
+                        @TaskAction
+                        public final void execute() {
+                            getWorkerExecutor().noIsolation().submit(SomethingWorkAction.class, params -> {
+                                params.getName().set(getName());
+                            });
+                        }
+                    }
+                '''.stripIndent(true).stripLeading()
     }
 }
