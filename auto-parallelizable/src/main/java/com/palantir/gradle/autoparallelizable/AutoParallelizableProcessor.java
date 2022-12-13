@@ -68,8 +68,8 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
                 .getQualifiedName()
                 .toString();
 
-        JavaFile javaFile = JavaFile.builder(packageName, type).build();
+        JavaFile workParams = JavaFile.builder(packageName, type).build();
 
-        Goethe.formatAndEmit(javaFile, processingEnv.getFiler());
+        Goethe.formatAndEmit(workParams, processingEnv.getFiler());
     }
 }

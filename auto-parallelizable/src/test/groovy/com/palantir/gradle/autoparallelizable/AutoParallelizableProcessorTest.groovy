@@ -39,9 +39,13 @@ class AutoParallelizableProcessorTest {
             import org.gradle.api.provider.Property;
             
             @AutoParallelizable
-            class Something {
+            public final class Something {
                 interface Params {
                     Property<String> getName();
+                }
+                
+                static void execute(Params params) {
+                    System.out.println("Hello " + params.getName().get());
                 }
             }
         '''.stripIndent(true)
@@ -62,6 +66,23 @@ class AutoParallelizableProcessorTest {
                     import org.gradle.workers.WorkParameters;
 
                     interface SomethingWorkParams extends WorkParameters, Something.Params {}
+                '''.stripIndent(true).stripLeading()
+
+        assertThat(compilation)
+                .generatedSourceFile("app.SomethingWorkAction")
+                .contentsAsString(StandardCharsets.UTF_8)
+                // language=java
+                .isEqualTo '''
+                    package app;
+
+                    import org.gradle.workers.WorkAction;
+
+                    class SomethingWorkAction extends WorkAction<Something.Params> {
+                        @Override
+                        public void execute() {
+                            Something.execute(getParameters());
+                        }
+                    }
                 '''.stripIndent(true).stripLeading()
     }
 }
