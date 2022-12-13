@@ -17,12 +17,17 @@
 package com.palantir.gradle.autoparallelizable;
 
 import com.palantir.goethe.Goethe;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import org.gradle.workers.WorkParameters;
 
 final class AutoParallelizableProcessor extends AbstractProcessor {
     @Override
@@ -36,16 +41,35 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
             return false;
         }
 
-        if (roundEnv.getElementsAnnotatedWith(AutoParallelizable.class).isEmpty()) {
-            return false;
-        }
-
-        TypeSpec type = TypeSpec.classBuilder("Blah").build();
-
-        JavaFile javaFile = JavaFile.builder("com.blah", type).build();
-
-        Goethe.formatAndEmit(javaFile, processingEnv.getFiler());
+        roundEnv.getElementsAnnotatedWith(AutoParallelizable.class).forEach(element -> {
+            paralleliseTask((TypeElement) element);
+        });
 
         return false;
+    }
+
+    private void paralleliseTask(TypeElement typeElement) {
+        List<TypeElement> possibleParams = typeElement.getEnclosedElements().stream()
+                .filter(subElement -> subElement.getKind().equals(ElementKind.INTERFACE))
+                .map(TypeElement.class::cast)
+                .filter(element -> element.getSimpleName().toString().equals("Params"))
+                .collect(Collectors.toList());
+
+        TypeElement params = possibleParams.get(0);
+
+        TypeSpec type = TypeSpec.interfaceBuilder(typeElement.getSimpleName() + "WorkParams")
+                .addSuperinterface(ClassName.get(WorkParameters.class))
+                .addSuperinterface(params.asType())
+                .build();
+
+        String packageName = processingEnv
+                .getElementUtils()
+                .getPackageOf(typeElement)
+                .getQualifiedName()
+                .toString();
+
+        JavaFile javaFile = JavaFile.builder(packageName, type).build();
+
+        Goethe.formatAndEmit(javaFile, processingEnv.getFiler());
     }
 }
