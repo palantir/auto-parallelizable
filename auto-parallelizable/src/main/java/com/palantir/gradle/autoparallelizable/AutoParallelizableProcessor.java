@@ -33,6 +33,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
@@ -86,44 +87,7 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
 
         emitWorkAction(typeElement, packageName, workParamsClassName);
 
-        MethodSpec workerExecutor = MethodSpec.methodBuilder("getWorkerExecutor")
-                .addAnnotation(Inject.class)
-                .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
-                .returns(ClassName.get(WorkerExecutor.class))
-                .build();
-
-        CodeBlock.Builder paramsSetters = CodeBlock.builder()
-                .add("$N().noIsolation().submit($T.class, params -> {", workerExecutor, workActionClassName)
-                .indent();
-
-        params.getEnclosedElements().stream()
-                .filter(element -> element.getKind().equals(ElementKind.METHOD))
-                .map(ExecutableElement.class::cast)
-                .forEach(possibleMethod -> {
-                    paramsSetters
-                            .add(
-                                    "params.$L().set($L());",
-                                    possibleMethod.getSimpleName(),
-                                    possibleMethod.getSimpleName())
-                            .build();
-                });
-
-        MethodSpec execute = MethodSpec.methodBuilder("execute")
-                .addAnnotation(TaskAction.class)
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addCode(paramsSetters.unindent().add("});").build())
-                .build();
-
-        TypeSpec taskImplType = TypeSpec.classBuilder(typeElement.getSimpleName() + "TaskImpl")
-                .addModifiers(Modifier.ABSTRACT)
-                .superclass(ClassName.get(DefaultTask.class))
-                .addMethod(workerExecutor)
-                .addMethod(execute)
-                .build();
-
-        JavaFile taskImpl = JavaFile.builder(packageName, taskImplType).build();
-
-        Goethe.formatAndEmit(taskImpl, processingEnv.getFiler());
+        emitTaskImpl(typeElement, params, packageName, workActionClassName);
     }
 
     private void emitWorkParams(TypeElement params, String packageName, ClassName workParamsClassName) {
@@ -163,5 +127,45 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
         JavaFile workAction = JavaFile.builder(packageName, workActionType).build();
 
         Goethe.formatAndEmit(workAction, processingEnv.getFiler());
+    }
+
+    private void emitTaskImpl(
+            TypeElement typeElement, TypeElement params, String packageName, ClassName workActionClassName) {
+        MethodSpec workerExecutor = MethodSpec.methodBuilder("getWorkerExecutor")
+                .addAnnotation(Inject.class)
+                .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
+                .returns(ClassName.get(WorkerExecutor.class))
+                .build();
+
+        CodeBlock.Builder paramsSetters = CodeBlock.builder()
+                .add("$N().noIsolation().submit($T.class, params -> {", workerExecutor, workActionClassName)
+                .indent();
+
+        params.getEnclosedElements().stream()
+                .filter(element -> element.getKind().equals(ElementKind.METHOD))
+                .map(ExecutableElement.class::cast)
+                .forEach(possibleMethod -> {
+                    Name simpleName = possibleMethod.getSimpleName();
+                    paramsSetters
+                            .add("params.$L().set($L());", simpleName, simpleName)
+                            .build();
+                });
+
+        MethodSpec execute = MethodSpec.methodBuilder("execute")
+                .addAnnotation(TaskAction.class)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addCode(paramsSetters.unindent().add("});").build())
+                .build();
+
+        TypeSpec taskImplType = TypeSpec.classBuilder(typeElement.getSimpleName() + "TaskImpl")
+                .addModifiers(Modifier.ABSTRACT)
+                .superclass(ClassName.get(DefaultTask.class))
+                .addMethod(workerExecutor)
+                .addMethod(execute)
+                .build();
+
+        JavaFile taskImpl = JavaFile.builder(packageName, taskImplType).build();
+
+        Goethe.formatAndEmit(taskImpl, processingEnv.getFiler());
     }
 }
