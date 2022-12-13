@@ -36,7 +36,7 @@ class AutoParallelizableProcessorTest {
             package app;
 
             import com.palantir.gradle.autoparallelizable.AutoParallelizable;
-            import org.gradle.api.provider.Property;
+            import org.gradle.api.file.RegularFileProperty;import org.gradle.api.provider.Property;
             
             @AutoParallelizable
             public final class Something {
@@ -47,11 +47,12 @@ class AutoParallelizableProcessorTest {
                 }
                 
                 interface Params {
-                    Property<String> getName();
+                    Property<String> getSomeString();
+                    RegularFileProperty getSomeFile();
                 }
                 
                 static void execute(Params params) {
-                    System.out.println("Hello " + params.getName().get());
+                    System.out.println("Hello " + params.getSomeString().get());
                 }
             }
         '''.stripIndent(true)
@@ -104,14 +105,15 @@ class AutoParallelizableProcessorTest {
                     import org.gradle.api.tasks.TaskAction;
                     import org.gradle.workers.WorkerExecutor;
 
-                    abstract class SomethingTaskImpl extends DefaultTask {
+                    abstract class SomethingTaskImpl extends DefaultTask implements Something.Params {
                         @Inject
                         protected abstract WorkerExecutor getWorkerExecutor();
                         
                         @TaskAction
                         public final void execute() {
                             getWorkerExecutor().noIsolation().submit(SomethingWorkAction.class, params -> {
-                                params.getName().set(getName());
+                                params.getSomeString().set(getSomeString());
+                                params.getSomeFile().set(getSomeFile());
                             });
                         }
                     }

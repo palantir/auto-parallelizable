@@ -160,6 +160,7 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
         TypeSpec taskImplType = TypeSpec.classBuilder(typeElement.getSimpleName() + "TaskImpl")
                 .addModifiers(Modifier.ABSTRACT)
                 .superclass(ClassName.get(DefaultTask.class))
+                .addSuperinterface(ClassName.get(params))
                 .addMethod(workerExecutor)
                 .addMethod(execute)
                 .build();
