@@ -18,7 +18,10 @@ package com.palantir.gradle.autoparallelizable;
 
 import com.palantir.goethe.Goethe;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.util.List;
 import java.util.Set;
@@ -26,7 +29,10 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
 
 final class AutoParallelizableProcessor extends AbstractProcessor {
@@ -57,19 +63,47 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
 
         TypeElement params = possibleParams.get(0);
 
-        TypeSpec type = TypeSpec.interfaceBuilder(typeElement.getSimpleName() + "WorkParams")
-                .addSuperinterface(ClassName.get(WorkParameters.class))
-                .addSuperinterface(params.asType())
-                .build();
-
         String packageName = processingEnv
                 .getElementUtils()
                 .getPackageOf(typeElement)
                 .getQualifiedName()
                 .toString();
 
-        JavaFile workParams = JavaFile.builder(packageName, type).build();
+        ClassName workParamsClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkParams");
+
+        TypeSpec workParamsType = TypeSpec.interfaceBuilder(workParamsClassName)
+                .addSuperinterface(ClassName.get(WorkParameters.class))
+                .addSuperinterface(params.asType())
+                .build();
+
+        JavaFile workParams = JavaFile.builder(packageName, workParamsType).build();
 
         Goethe.formatAndEmit(workParams, processingEnv.getFiler());
+
+        List<ExecutableElement> possibleExecutes = typeElement.getEnclosedElements().stream()
+                .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
+                .map(ExecutableElement.class::cast)
+                .filter(element -> element.getSimpleName().toString().equals("execute"))
+                .collect(Collectors.toList());
+
+        ExecutableElement _execute = possibleExecutes.get(0);
+
+        MethodSpec workActionExecute = MethodSpec.methodBuilder("execute")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addCode(CodeBlock.builder()
+                        .add("$T.execute(getParameters());", typeElement.asType())
+                        .build())
+                .build();
+
+        TypeSpec workActionType = TypeSpec.classBuilder(typeElement.getSimpleName() + "WorkAction")
+                .addModifiers(Modifier.ABSTRACT)
+                .addSuperinterface(ParameterizedTypeName.get(ClassName.get(WorkAction.class), workParamsClassName))
+                .addMethod(workActionExecute)
+                .build();
+
+        JavaFile workAction = JavaFile.builder(packageName, workActionType).build();
+
+        Goethe.formatAndEmit(workAction, processingEnv.getFiler());
     }
 }

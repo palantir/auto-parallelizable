@@ -75,11 +75,12 @@ class AutoParallelizableProcessorTest {
                 .isEqualTo '''
                     package app;
 
+                    import java.lang.Override;
                     import org.gradle.workers.WorkAction;
 
-                    class SomethingWorkAction extends WorkAction<Something.Params> {
+                    abstract class SomethingWorkAction implements WorkAction<SomethingWorkParams> {
                         @Override
-                        public void execute() {
+                        public final void execute() {
                             Something.execute(getParameters());
                         }
                     }
