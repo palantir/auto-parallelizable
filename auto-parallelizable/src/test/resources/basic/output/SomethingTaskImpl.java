@@ -1,10 +1,12 @@
 package app;
 
+import javax.annotation.processing.Generated;
 import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.workers.WorkerExecutor;
 
+@Generated("com.palantir.gradle.autoparallelizable.AutoParallelizableProcessor")
 abstract class SomethingTaskImpl extends DefaultTask implements Something.Params {
     @Inject
     protected abstract WorkerExecutor getWorkerExecutor();

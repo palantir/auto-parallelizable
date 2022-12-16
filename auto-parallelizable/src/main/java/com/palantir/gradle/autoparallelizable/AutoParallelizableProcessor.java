@@ -17,11 +17,9 @@
 package com.palantir.gradle.autoparallelizable;
 
 import com.google.auto.service.AutoService;
-import com.palantir.goethe.Goethe;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
@@ -87,27 +85,25 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         ClassName workParamsClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkParams");
         ClassName workActionClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkAction");
 
-        emitWorkParams(params, packageName, workParamsClassName);
+        Emitter emitter = new Emitter(processingEnv.getFiler(), packageName);
 
-        emitWorkAction(typeElement, packageName, workParamsClassName);
+        emitWorkParams(emitter, params, workParamsClassName);
 
-        emitTaskImpl(typeElement, params, packageName, workActionClassName);
+        emitWorkAction(emitter, typeElement, workParamsClassName);
+
+        emitTaskImpl(emitter, typeElement, params, workActionClassName);
     }
 
-    private void emitWorkParams(TypeElement params, String packageName, ClassName workParamsClassName) {
+    private void emitWorkParams(Emitter emitter, TypeElement params, ClassName workParamsClassName) {
         TypeSpec workParamsType = TypeSpec.interfaceBuilder(workParamsClassName)
                 .addSuperinterface(ClassName.get(WorkParameters.class))
                 .addSuperinterface(params.asType())
                 .build();
 
-        JavaFile workParams = JavaFile.builder(packageName, workParamsType)
-                .skipJavaLangImports(true)
-                .build();
-
-        Goethe.formatAndEmit(workParams, processingEnv.getFiler());
+        emitter.emit(workParamsType);
     }
 
-    private void emitWorkAction(TypeElement typeElement, String packageName, ClassName workParamsClassName) {
+    private void emitWorkAction(Emitter emitter, TypeElement typeElement, ClassName workParamsClassName) {
         List<ExecutableElement> possibleExecutes = typeElement.getEnclosedElements().stream()
                 .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
                 .map(ExecutableElement.class::cast)
@@ -138,15 +134,11 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .addMethod(workActionExecute)
                 .build();
 
-        JavaFile workAction = JavaFile.builder(packageName, workActionType)
-                .skipJavaLangImports(true)
-                .build();
-
-        Goethe.formatAndEmit(workAction, processingEnv.getFiler());
+        emitter.emit(workActionType);
     }
 
     private void emitTaskImpl(
-            TypeElement typeElement, TypeElement params, String packageName, ClassName workActionClassName) {
+            Emitter emitter, TypeElement typeElement, TypeElement params, ClassName workActionClassName) {
         MethodSpec workerExecutor = MethodSpec.methodBuilder("getWorkerExecutor")
                 .addAnnotation(Inject.class)
                 .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
@@ -181,10 +173,6 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .addMethod(execute)
                 .build();
 
-        JavaFile taskImpl = JavaFile.builder(packageName, taskImplType)
-                .skipJavaLangImports(true)
-                .build();
-
-        Goethe.formatAndEmit(taskImpl, processingEnv.getFiler());
+        emitter.emit(taskImplType);
     }
 }
