@@ -40,7 +40,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @CompileStatic
-class AutoParallelizableProcessorTest {
+class CheckedInTests {
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("package (?<package>[\\w.]+);");
 
     @ParameterizedTest
@@ -49,7 +49,7 @@ class AutoParallelizableProcessorTest {
         Path testInputs = testRoot.resolve("input");
 
         JavaFileObject[] inputs = childrenOf(testInputs).stream()
-                .map(AutoParallelizableProcessorTest::javaFileObjectFromFile)
+                .map(CheckedInTests::javaFileObjectFromFile)
                 .toArray(JavaFileObject[]::new);
 
         Compilation compilation = Compiler.javac()
