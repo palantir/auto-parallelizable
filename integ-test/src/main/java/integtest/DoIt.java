@@ -50,6 +50,9 @@ public final class DoIt {
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     static void action(Params params) {
         System.out.println("string: " + params.getStringValue().get());
+        System.out.println("file: " + params.getFileValue().get().getAsFile().getName());
+        System.out.println("dir: " + params.getDirValue().get().getAsFile().getName());
+        System.out.println("ints: " + params.getIntsValue().get());
     }
 
     private DoIt() {}

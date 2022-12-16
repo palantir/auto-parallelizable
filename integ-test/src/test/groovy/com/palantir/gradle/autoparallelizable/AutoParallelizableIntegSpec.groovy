@@ -21,14 +21,17 @@ import nebula.test.IntegrationSpec
 
 class AutoParallelizableIntegSpec extends IntegrationSpec {
     def test() {
+        file('file')
+        directory('dir')
+
         // language=gradle
         buildFile << '''
             import integtest.DoIt.DoItTask
             
             task doIt(type: DoItTask) {
                 stringValue = 'heh'
-                fileValue = file('build.gradle')
-                dirValue = rootDir
+                fileValue = file('file')
+                dirValue = file('dir')
                 intsValue = [1, 2 ,3] 
             }
         '''.stripIndent(true)
@@ -38,5 +41,8 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
 
         then:
         stdout.contains 'string: heh'
+        stdout.contains 'file: file'
+        stdout.contains 'dir: dir'
+        stdout.contains 'ints: [1, 2, 3]'
     }
 }
