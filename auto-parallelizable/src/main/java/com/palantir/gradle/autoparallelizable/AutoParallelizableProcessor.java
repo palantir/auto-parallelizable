@@ -96,7 +96,9 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
                 .addSuperinterface(params.asType())
                 .build();
 
-        JavaFile workParams = JavaFile.builder(packageName, workParamsType).build();
+        JavaFile workParams = JavaFile.builder(packageName, workParamsType)
+                .skipJavaLangImports(true)
+                .build();
 
         Goethe.formatAndEmit(workParams, processingEnv.getFiler());
     }
@@ -124,7 +126,9 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
                 .addMethod(workActionExecute)
                 .build();
 
-        JavaFile workAction = JavaFile.builder(packageName, workActionType).build();
+        JavaFile workAction = JavaFile.builder(packageName, workActionType)
+                .skipJavaLangImports(true)
+                .build();
 
         Goethe.formatAndEmit(workAction, processingEnv.getFiler());
     }
@@ -165,7 +169,9 @@ final class AutoParallelizableProcessor extends AbstractProcessor {
                 .addMethod(execute)
                 .build();
 
-        JavaFile taskImpl = JavaFile.builder(packageName, taskImplType).build();
+        JavaFile taskImpl = JavaFile.builder(packageName, taskImplType)
+                .skipJavaLangImports(true)
+                .build();
 
         Goethe.formatAndEmit(taskImpl, processingEnv.getFiler());
     }
