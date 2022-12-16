@@ -3,6 +3,7 @@ apply plugin: 'groovy'
 apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
+    implementation project(':auto-parallelizable-annotations')
     implementation gradleApi()
     implementation 'com.palantir.goethe:goethe:0.9.0'
 

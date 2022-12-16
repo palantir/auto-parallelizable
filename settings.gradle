@@ -1,3 +1,4 @@
 rootProject.name = 'auto-parallelizable-root'
 
 include 'auto-parallelizable'
+include 'auto-parallelizable-annotations'
