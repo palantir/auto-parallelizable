@@ -1,8 +1,12 @@
 apply plugin: 'java-gradle-plugin'
+apply plugin: 'groovy'
 
 dependencies {
     implementation gradleApi()
+
+    annotationProcessor project(':auto-parallelizable')
+    compileOnly project(':auto-parallelizable-annotations')
+
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'org.assertj:assertj-core'
-    testImplementation 'com.google.testing.compile:compile-testing'
+    testImplementation 'com.netflix.nebula:nebula-test'
 }

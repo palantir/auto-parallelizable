@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.autoparallelizable;
 
+import com.google.auto.service.AutoService;
 import com.palantir.goethe.Goethe;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
@@ -41,7 +43,8 @@ import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
 import org.gradle.workers.WorkerExecutor;
 
-final class AutoParallelizableProcessor extends AbstractProcessor {
+@AutoService(Processor.class)
+public final class AutoParallelizableProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(AutoParallelizable.class.getCanonicalName());
