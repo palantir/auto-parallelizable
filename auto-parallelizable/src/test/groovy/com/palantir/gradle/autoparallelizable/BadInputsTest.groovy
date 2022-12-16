@@ -32,9 +32,11 @@ class BadInputsTest {
     @Test
     void 'Params interface must exist'() {
         JavaFileObject noParams = JavaFileObjects.forSourceString 'app.NoParams', /* language=java */ '''
+            package app;
+
             @com.palantir.gradle.autoparallelizable.AutoParallelizable
             public final class NoParams {
-                static void action(); 
+                static void action() {}
             }
         '''.stripIndent(true)
 
@@ -44,6 +46,28 @@ class BadInputsTest {
 
         assertThat(compilation).failed()
 
-        assertThat(compilation).hadErrorContaining("Could not find interface named 'Params' in class NoParams")
+        assertThat(compilation).hadErrorContaining("Could not find interface named 'Params' in class app.NoParams")
+    }
+
+    @Test
+    void 'Params must be an interface'() {
+        JavaFileObject noParams = JavaFileObjects.forSourceString 'app.ClassParams', /* language=java */ '''
+            package app;
+            
+            @com.palantir.gradle.autoparallelizable.AutoParallelizable
+            public final class ClassParams {
+                class Params {}
+    
+                static void action(Params params) {} 
+            }
+        '''.stripIndent(true)
+
+        Compilation compilation = Compiler.javac()
+                .withProcessors(new AutoParallelizableProcessor())
+                .compile(noParams)
+
+        assertThat(compilation).failed()
+
+        assertThat(compilation).hadErrorContaining("Params type must be an interface - was a class")
     }
 }

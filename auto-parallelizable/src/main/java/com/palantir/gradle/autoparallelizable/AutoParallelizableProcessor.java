@@ -24,6 +24,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
@@ -31,6 +32,7 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -69,9 +71,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
     }
 
     private void paralleliseTask(TypeElement typeElement) {
-        List<TypeElement> possibleParams = typeElement.getEnclosedElements().stream()
-                .filter(subElement -> subElement.getKind().equals(ElementKind.INTERFACE))
-                .map(TypeElement.class::cast)
+        List<Element> possibleParams = typeElement.getEnclosedElements().stream()
                 .filter(element -> element.getSimpleName().toString().equals("Params"))
                 .collect(Collectors.toList());
 
@@ -84,7 +84,18 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
             return;
         }
 
-        TypeElement params = possibleParams.get(0);
+        Element paramElement = possibleParams.get(0);
+
+        if (!paramElement.getKind().equals(ElementKind.INTERFACE)) {
+            processingEnv
+                    .getMessager()
+                    .printMessage(
+                            Kind.ERROR,
+                            "Params type must be an interface - was a "
+                                    + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
+        }
+
+        TypeElement params = (TypeElement) paramElement;
 
         String packageName = processingEnv
                 .getElementUtils()
