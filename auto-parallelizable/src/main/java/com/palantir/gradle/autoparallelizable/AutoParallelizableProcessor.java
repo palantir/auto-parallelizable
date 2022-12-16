@@ -18,6 +18,7 @@ package com.palantir.gradle.autoparallelizable;
 
 import com.google.auto.service.AutoService;
 import com.palantir.goethe.Goethe;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
@@ -115,6 +116,13 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
         ExecutableElement _action = possibleExecutes.get(0);
 
+        MethodSpec constructor = MethodSpec.constructorBuilder()
+                .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+                        .addMember("value", "$S", "RedundantModifier")
+                        .build())
+                .addModifiers(Modifier.PUBLIC)
+                .build();
+
         MethodSpec workActionExecute = MethodSpec.methodBuilder("execute")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -126,6 +134,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         TypeSpec workActionType = TypeSpec.classBuilder(typeElement.getSimpleName() + "WorkAction")
                 .addModifiers(Modifier.ABSTRACT)
                 .addSuperinterface(ParameterizedTypeName.get(ClassName.get(WorkAction.class), workParamsClassName))
+                .addMethod(constructor)
                 .addMethod(workActionExecute)
                 .build();
 
