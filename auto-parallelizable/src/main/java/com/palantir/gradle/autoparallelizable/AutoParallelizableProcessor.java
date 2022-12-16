@@ -36,6 +36,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic.Kind;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.workers.WorkAction;
@@ -73,6 +74,15 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .map(TypeElement.class::cast)
                 .filter(element -> element.getSimpleName().toString().equals("Params"))
                 .collect(Collectors.toList());
+
+        if (possibleParams.isEmpty()) {
+            processingEnv
+                    .getMessager()
+                    .printMessage(
+                            Kind.ERROR,
+                            "Could not find interface named 'Params' in class " + typeElement.getQualifiedName());
+            return;
+        }
 
         TypeElement params = possibleParams.get(0);
 
