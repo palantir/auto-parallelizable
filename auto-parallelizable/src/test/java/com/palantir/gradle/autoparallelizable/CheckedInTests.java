@@ -23,8 +23,9 @@ import com.google.common.collect.Iterables;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
-import groovy.transform.CompileStatic;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,7 +40,7 @@ import javax.tools.JavaFileObject;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@CompileStatic
+// Regenerate these tests by running: ./gradlew :auto-parallelizable:test -Drecreate=true
 class CheckedInTests {
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("package (?<package>[\\w.]+);");
 
@@ -58,9 +59,29 @@ class CheckedInTests {
 
         assertThat(compilation).succeededWithoutWarnings();
 
+        Path testOutputs = testRoot.resolve("output");
+        List<Path> outputJavaFiles = childrenOf(testOutputs);
+
+        if (Boolean.getBoolean("recreate")) {
+            outputJavaFiles.forEach(path -> path.toFile().delete());
+
+            compilation.generatedSourceFiles().forEach(javaFileObject -> {
+                Path generatedSourceFile = testOutputs.resolve(fileNameOf(javaFileObject));
+
+                try (InputStream inputStream = javaFileObject.openInputStream();
+                        OutputStream outputStream = Files.newOutputStream(generatedSourceFile)) {
+                    inputStream.transferTo(outputStream);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            return;
+        }
+
         Set<String> seenFiles = new HashSet<>();
 
-        childrenOf(testRoot.resolve("output")).forEach(output -> {
+        outputJavaFiles.forEach(output -> {
             seenFiles.add(output.getFileName().toString());
             assertThat(compilation)
                     .generatedSourceFile(fullyQualifiedName(output))
@@ -69,8 +90,7 @@ class CheckedInTests {
         });
 
         compilation.generatedSourceFiles().stream()
-                .filter(javaFileObject ->
-                        !seenFiles.contains(Iterables.getLast(Splitter.on('/').splitToList(javaFileObject.getName()))))
+                .filter(javaFileObject -> !seenFiles.contains(fileNameOf(javaFileObject)))
                 .forEach(javaFileObject -> {
                     throw new RuntimeException(
                             "Produced source file output " + javaFileObject.getName() + " which was not expected");
@@ -111,5 +131,9 @@ class CheckedInTests {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String fileNameOf(JavaFileObject javaFileObject) {
+        return Iterables.getLast(Splitter.on('/').splitToList(javaFileObject.getName()));
     }
 }
