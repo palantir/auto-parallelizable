@@ -31,43 +31,53 @@ import javax.tools.JavaFileObject
 class BadInputsTest {
     @Test
     void 'Params interface must exist'() {
-        JavaFileObject noParams = JavaFileObjects.forSourceString 'app.NoParams', /* language=java */ '''
-            package app;
-
-            @com.palantir.gradle.autoparallelizable.AutoParallelizable
-            public final class NoParams {
+        assertErrorProducedByFile "Could not find interface named 'Params' in class app.Test", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
                 static void action() {}
             }
-        '''.stripIndent(true)
-
-        Compilation compilation = Compiler.javac()
-                .withProcessors(new AutoParallelizableProcessor())
-                .compile(noParams)
-
-        assertThat(compilation).failed()
-
-        assertThat(compilation).hadErrorContaining("Could not find interface named 'Params' in class app.NoParams")
+        '''
     }
 
     @Test
     void 'Params must be an interface'() {
-        JavaFileObject noParams = JavaFileObjects.forSourceString 'app.ClassParams', /* language=java */ '''
-            package app;
-            
-            @com.palantir.gradle.autoparallelizable.AutoParallelizable
-            public final class ClassParams {
+        assertErrorProducedByFile "Params type must be an interface - was a class", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test{
                 class Params {}
     
                 static void action(Params params) {} 
             }
-        '''.stripIndent(true)
+        '''
+    }
+
+    @Test
+    void 'action method must exist'() {
+        assertErrorProducedByFile "There must be a 'static void action(Params)' method that performs the task action", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+    
+                static void action(Params params) {} 
+            }
+        '''
+    }
+
+    private static void assertErrorProducedByFile(String error, String file) {
+        String modifiedFile = /*language=java */ """
+            package app;
+            
+            import com.palantir.gradle.autoparallelizable.AutoParallelizable;
+        """.stripIndent(true) + file.stripIndent(true)
+
+        JavaFileObject noAction = JavaFileObjects.forSourceString 'app.Test', modifiedFile
 
         Compilation compilation = Compiler.javac()
                 .withProcessors(new AutoParallelizableProcessor())
-                .compile(noParams)
+                .compile(noAction)
 
         assertThat(compilation).failed()
 
-        assertThat(compilation).hadErrorContaining("Params type must be an interface - was a class")
+        assertThat(compilation).hadErrorContaining(error)
     }
 }
