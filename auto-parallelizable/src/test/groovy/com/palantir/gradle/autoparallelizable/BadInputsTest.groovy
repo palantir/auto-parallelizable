@@ -16,54 +16,19 @@
 
 package com.palantir.gradle.autoparallelizable
 
+import org.junit.jupiter.api.Test
+
+import static com.google.testing.compile.CompilationSubject.assertThat;
+
 import com.google.testing.compile.Compilation
 import com.google.testing.compile.Compiler
 import com.google.testing.compile.JavaFileObjects
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
 
 import javax.tools.JavaFileObject
-import java.util.stream.Stream
-
-import static com.google.testing.compile.CompilationSubject.assertThat
 
 @CompileStatic
 class BadInputsTest {
-    @ParameterizedTest
-    @MethodSource("expectedErrorsForFiles")
-    void test(Map.Entry<String, String> entry) {
-        println entry
-    }
-
-    static Stream<Map.Entry<String, String>> expectedErrorsForFiles() {
-        return [
-                "Could not find interface named 'Params' in class app.Test": /* language=java */ '''
-                    @AutoParallelizable
-                    public final class Test {
-                        static void action() {}
-                    }
-                ''',
-                "Params type must be an interface - was a class": /* language=java */ '''
-                    @AutoParallelizable
-                    public final class Test{
-                        class Params {}
-            
-                        static void action(Params params) {} 
-                    }
-                ''',
-                "There must be a 'static void action(Params)' method that performs the task action": /* language=java */ '''
-                    @AutoParallelizable
-                    public final class Test {
-                        interface Params {}
-            
-                        static void action(Params params) {} 
-                    }
-                '''
-        ].entrySet().stream()
-    }
-
     @Test
     void 'Params interface must exist'() {
         assertErrorProducedByFile "Could not find interface named 'Params' in class app.Test", /* language=java */ '''
