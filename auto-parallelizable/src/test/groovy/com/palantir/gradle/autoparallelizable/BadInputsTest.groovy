@@ -61,6 +61,56 @@ class BadInputsTest {
         '''
     }
 
+    @Test
+    void 'action method must be static void Params'() {
+        assertErrorProducedByFile "The 'action' method must be static", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+                
+                void action(Params params) {}
+            }
+        '''
+
+        assertErrorProducedByFile "The 'action' method must return void", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+                
+                static int action(Params params) {
+                    return 1;
+                }
+            }
+        '''
+
+        assertErrorProducedByFile "The 'action' method must take only Params", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+                
+                static void action() {}
+            }
+        '''
+
+        assertErrorProducedByFile "The 'action' method must take only Params", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+                
+                static void action(int something) {}
+            }
+        '''
+
+        assertErrorProducedByFile "The 'action' method must take only Params", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+                
+                static void action(Params params, int lol) {}
+            }
+        '''
+    }
+
     private static void assertErrorProducedByFile(String error, String file) {
         String modifiedFile = /*language=java */ """
             package app;

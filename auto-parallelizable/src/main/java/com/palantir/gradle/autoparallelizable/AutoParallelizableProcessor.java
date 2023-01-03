@@ -38,6 +38,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
@@ -110,7 +111,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
         emitWorkParams(emitter, params, workParamsClassName);
 
-        emitWorkAction(emitter, typeElement, workParamsClassName);
+        emitWorkAction(emitter, typeElement, params, workParamsClassName);
 
         emitTaskImpl(emitter, typeElement, params, workActionClassName);
     }
@@ -124,7 +125,8 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         emitter.emit(workParamsType);
     }
 
-    private void emitWorkAction(Emitter emitter, TypeElement typeElement, ClassName workParamsClassName) {
+    private void emitWorkAction(
+            Emitter emitter, TypeElement typeElement, TypeElement params, ClassName workParamsClassName) {
         List<ExecutableElement> possibleActions = typeElement.getEnclosedElements().stream()
                 .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
                 .map(ExecutableElement.class::cast)
@@ -132,11 +134,22 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .collect(Collectors.toList());
 
         if (possibleActions.isEmpty()) {
-            processingEnv
-                    .getMessager()
-                    .printMessage(
-                            Kind.ERROR,
-                            "There must be a 'static void action(Params)' method that performs the task action");
+            error("There must be a 'static void action(Params)' method that performs the task action");
+        }
+
+        ExecutableElement action = possibleActions.get(0);
+
+        if (!action.getModifiers().contains(Modifier.STATIC)) {
+            error("The 'action' method must be static");
+        }
+
+        if (!action.getReturnType().getKind().equals(TypeKind.VOID)) {
+            error("The 'action' method must return void");
+        }
+
+        if (action.getParameters().size() != 1
+                || !action.getParameters().get(0).asType().equals(params.asType())) {
+            error("The 'action' method must take only Params");
         }
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
@@ -201,5 +214,9 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .build();
 
         emitter.emit(taskImplType);
+    }
+
+    private void error(String error) {
+        processingEnv.getMessager().printMessage(Kind.ERROR, error);
     }
 }
