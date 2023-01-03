@@ -25,6 +25,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
@@ -72,31 +73,17 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
     }
 
     private void paralleliseTask(TypeElement typeElement) {
-        List<Element> possibleParams = typeElement.getEnclosedElements().stream()
-                .filter(element -> element.getSimpleName().toString().equals("Params"))
-                .collect(Collectors.toList());
+        Optional<TypeElement> maybeParams = verifyParamsElement(typeElement);
 
-        if (possibleParams.isEmpty()) {
-            processingEnv
-                    .getMessager()
-                    .printMessage(
-                            Kind.ERROR,
-                            "Could not find interface named 'Params' in class " + typeElement.getQualifiedName());
+        if (maybeParams.isEmpty()) {
             return;
         }
 
-        Element paramElement = possibleParams.get(0);
+        TypeElement params = maybeParams.get();
 
-        if (!paramElement.getKind().equals(ElementKind.INTERFACE)) {
-            processingEnv
-                    .getMessager()
-                    .printMessage(
-                            Kind.ERROR,
-                            "Params type must be an interface - was a "
-                                    + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
+        if (!verifyActionMethod(typeElement, params)) {
+            return;
         }
-
-        TypeElement params = (TypeElement) paramElement;
 
         String packageName = processingEnv
                 .getElementUtils()
@@ -111,9 +98,69 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
         emitWorkParams(emitter, params, workParamsClassName);
 
-        emitWorkAction(emitter, typeElement, params, workParamsClassName);
+        emitWorkAction(emitter, typeElement, workParamsClassName);
 
         emitTaskImpl(emitter, typeElement, params, workActionClassName);
+    }
+
+    private Optional<TypeElement> verifyParamsElement(TypeElement typeElement) {
+        List<Element> possibleParams = typeElement.getEnclosedElements().stream()
+                .filter(element -> element.getSimpleName().toString().equals("Params"))
+                .collect(Collectors.toList());
+
+        if (possibleParams.isEmpty()) {
+            error("Could not find interface named 'Params' in class " + typeElement.getQualifiedName());
+            return Optional.empty();
+        }
+
+        Element paramElement = possibleParams.get(0);
+
+        if (!paramElement.getKind().equals(ElementKind.INTERFACE)) {
+            processingEnv
+                    .getMessager()
+                    .printMessage(
+                            Kind.ERROR,
+                            "Params type must be an interface - was a "
+                                    + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
+            return Optional.empty();
+        }
+
+        return Optional.of((TypeElement) paramElement);
+    }
+
+    private boolean verifyActionMethod(TypeElement typeElement, TypeElement params) {
+        List<ExecutableElement> possibleActions = typeElement.getEnclosedElements().stream()
+                .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
+                .map(ExecutableElement.class::cast)
+                .filter(element -> element.getSimpleName().toString().equals("action"))
+                .collect(Collectors.toList());
+
+        if (possibleActions.isEmpty()) {
+            error("There must be a 'static void action(Params)' method that performs the task action");
+            return false;
+        }
+
+        ExecutableElement action = possibleActions.get(0);
+
+        boolean successful = true;
+
+        if (!action.getModifiers().contains(Modifier.STATIC)) {
+            error("The 'action' method must be static");
+            successful = false;
+        }
+
+        if (!action.getReturnType().getKind().equals(TypeKind.VOID)) {
+            error("The 'action' method must return void");
+            successful = false;
+        }
+
+        if (action.getParameters().size() != 1
+                || !action.getParameters().get(0).asType().equals(params.asType())) {
+            error("The 'action' method must take only Params");
+            successful = false;
+        }
+
+        return successful;
     }
 
     private void emitWorkParams(Emitter emitter, TypeElement params, ClassName workParamsClassName) {
@@ -125,32 +172,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         emitter.emit(workParamsType);
     }
 
-    private void emitWorkAction(
-            Emitter emitter, TypeElement typeElement, TypeElement params, ClassName workParamsClassName) {
-        List<ExecutableElement> possibleActions = typeElement.getEnclosedElements().stream()
-                .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
-                .map(ExecutableElement.class::cast)
-                .filter(element -> element.getSimpleName().toString().equals("action"))
-                .collect(Collectors.toList());
-
-        if (possibleActions.isEmpty()) {
-            error("There must be a 'static void action(Params)' method that performs the task action");
-        }
-
-        ExecutableElement action = possibleActions.get(0);
-
-        if (!action.getModifiers().contains(Modifier.STATIC)) {
-            error("The 'action' method must be static");
-        }
-
-        if (!action.getReturnType().getKind().equals(TypeKind.VOID)) {
-            error("The 'action' method must return void");
-        }
-
-        if (action.getParameters().size() != 1
-                || !action.getParameters().get(0).asType().equals(params.asType())) {
-            error("The 'action' method must take only Params");
-        }
+    private void emitWorkAction(Emitter emitter, TypeElement typeElement, ClassName workParamsClassName) {
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
