@@ -115,6 +115,10 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
         Element paramElement = possibleParams.get(0);
 
+        if (!isPackagePrivate(paramElement)) {
+            error("Params type must be package-private");
+        }
+
         if (!paramElement.getKind().equals(ElementKind.INTERFACE)) {
             error("Params type must be an interface - was a "
                     + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
@@ -151,12 +155,27 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         }
 
         if (action.getParameters().size() != 1
-                || !action.getParameters().get(0).asType().equals(params.asType())) {
+                || !processingEnv
+                        .getTypeUtils()
+                        .isSameType(action.getParameters().get(0).asType(), params.asType())) {
             error("The 'action' method must take only Params");
             successful = false;
         }
 
+        if (!isPackagePrivate(action)) {
+            error("The 'action' method must be package-private");
+            successful = false;
+        }
+
         return successful;
+    }
+
+    private boolean isPackagePrivate(Element element) {
+        Set<Modifier> modifiers = element.getModifiers();
+
+        return !(modifiers.contains(Modifier.PUBLIC)
+                || modifiers.contains(Modifier.PRIVATE)
+                || modifiers.contains(Modifier.PROTECTED));
     }
 
     private void emitWorkParams(Emitter emitter, TypeElement params, ClassName workParamsClassName) {

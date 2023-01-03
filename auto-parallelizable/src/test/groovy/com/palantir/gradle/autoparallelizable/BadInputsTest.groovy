@@ -52,6 +52,18 @@ class BadInputsTest {
     }
 
     @Test
+    void 'Params must be package-private'() {
+        assertErrorProducedByFile "Params type must be package-private", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test{
+                public class Params {}
+    
+                static void action(Params params) {} 
+            }
+        '''
+    }
+
+    @Test
     void 'action method must exist'() {
         assertErrorProducedByFile "There must be a 'static void action(Params)' method that performs the task action", /* language=java */ '''
             @AutoParallelizable
@@ -107,6 +119,18 @@ class BadInputsTest {
                 interface Params {}
                 
                 static void action(Params params, int lol) {}
+            }
+        '''
+    }
+
+    @Test
+    void 'action method must be package private'() {
+        assertErrorProducedByFile "The 'action' method must be package-private", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+                
+                public static void action(Params params) {}
             }
         '''
     }
