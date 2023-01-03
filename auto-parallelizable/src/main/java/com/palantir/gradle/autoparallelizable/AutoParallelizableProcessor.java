@@ -116,12 +116,8 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         Element paramElement = possibleParams.get(0);
 
         if (!paramElement.getKind().equals(ElementKind.INTERFACE)) {
-            processingEnv
-                    .getMessager()
-                    .printMessage(
-                            Kind.ERROR,
-                            "Params type must be an interface - was a "
-                                    + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
+            error("Params type must be an interface - was a "
+                    + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
             return Optional.empty();
         }
 
