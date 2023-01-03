@@ -125,13 +125,19 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
     }
 
     private void emitWorkAction(Emitter emitter, TypeElement typeElement, ClassName workParamsClassName) {
-        List<ExecutableElement> possibleExecutes = typeElement.getEnclosedElements().stream()
+        List<ExecutableElement> possibleActions = typeElement.getEnclosedElements().stream()
                 .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
                 .map(ExecutableElement.class::cast)
                 .filter(element -> element.getSimpleName().toString().equals("action"))
                 .collect(Collectors.toList());
 
-        ExecutableElement _action = possibleExecutes.get(0);
+        if (possibleActions.isEmpty()) {
+            processingEnv
+                    .getMessager()
+                    .printMessage(
+                            Kind.ERROR,
+                            "There must be a 'static void action(Params)' method that performs the task action");
+        }
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)

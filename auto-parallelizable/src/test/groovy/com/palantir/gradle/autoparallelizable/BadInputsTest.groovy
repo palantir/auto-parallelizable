@@ -57,8 +57,6 @@ class BadInputsTest {
             @AutoParallelizable
             public final class Test {
                 interface Params {}
-    
-                static void action(Params params) {} 
             }
         '''
     }
