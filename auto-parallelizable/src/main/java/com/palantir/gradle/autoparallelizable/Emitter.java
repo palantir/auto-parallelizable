@@ -22,14 +22,17 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Generated;
+import javax.lang.model.element.Element;
 
 final class Emitter {
     private final Filer filer;
     private final String packageName;
+    private final Element originatingElement;
 
-    Emitter(Filer filer, String packageName) {
+    Emitter(Filer filer, String packageName, Element originatingElement) {
         this.filer = filer;
         this.packageName = packageName;
+        this.originatingElement = originatingElement;
     }
 
     public void emit(TypeSpec typeSpec) {
@@ -37,6 +40,7 @@ final class Emitter {
                 .addAnnotation(AnnotationSpec.builder(Generated.class)
                         .addMember("value", "$S", AutoParallelizableProcessor.class.getCanonicalName())
                         .build())
+                .addOriginatingElement(originatingElement)
                 .build();
 
         JavaFile javaFile = JavaFile.builder(packageName, newTypeSpec)
