@@ -4,7 +4,6 @@ apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
     implementation project(':auto-parallelizable-annotations')
-    implementation gradleApi()
     implementation 'com.palantir.goethe:goethe'
 
     annotationProcessor 'com.google.auto.service:auto-service'

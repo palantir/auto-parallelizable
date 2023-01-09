@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
-import javax.inject.Inject;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -41,11 +40,6 @@ import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.tasks.TaskAction;
-import org.gradle.workers.WorkAction;
-import org.gradle.workers.WorkParameters;
-import org.gradle.workers.WorkerExecutor;
 
 @AutoService(Processor.class)
 public final class AutoParallelizableProcessor extends AbstractProcessor {
@@ -182,7 +176,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
     private void emitWorkParams(Emitter emitter, TypeElement params, ClassName workParamsClassName) {
         TypeSpec workParamsType = TypeSpec.interfaceBuilder(workParamsClassName)
-                .addSuperinterface(ClassName.get(WorkParameters.class))
+                .addSuperinterface(ClassName.get("org.gradle.workers", "WorkParameters"))
                 .addSuperinterface(params.asType())
                 .build();
 
@@ -208,7 +202,8 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
         TypeSpec workActionType = TypeSpec.classBuilder(typeElement.getSimpleName() + "WorkAction")
                 .addModifiers(Modifier.ABSTRACT)
-                .addSuperinterface(ParameterizedTypeName.get(ClassName.get(WorkAction.class), workParamsClassName))
+                .addSuperinterface(ParameterizedTypeName.get(
+                        ClassName.get("org.gradle.workers", "WorkAction"), workParamsClassName))
                 .addMethod(constructor)
                 .addMethod(workActionExecute)
                 .build();
@@ -219,9 +214,9 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
     private void emitTaskImpl(
             Emitter emitter, TypeElement typeElement, TypeElement params, ClassName workActionClassName) {
         MethodSpec workerExecutor = MethodSpec.methodBuilder("getWorkerExecutor")
-                .addAnnotation(Inject.class)
+                .addAnnotation(ClassName.get("javax.inject", "Inject"))
                 .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
-                .returns(ClassName.get(WorkerExecutor.class))
+                .returns(ClassName.get("org.gradle.workers", "WorkerExecutor"))
                 .build();
 
         CodeBlock.Builder paramsSetters = CodeBlock.builder()
@@ -239,14 +234,14 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 });
 
         MethodSpec execute = MethodSpec.methodBuilder("execute")
-                .addAnnotation(TaskAction.class)
+                .addAnnotation(ClassName.get("org.gradle.api.tasks", "TaskAction"))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addCode(paramsSetters.unindent().add("});").build())
                 .build();
 
         TypeSpec taskImplType = TypeSpec.classBuilder(typeElement.getSimpleName() + "TaskImpl")
                 .addModifiers(Modifier.ABSTRACT)
-                .superclass(ClassName.get(DefaultTask.class))
+                .superclass(ClassName.get("org.gradle.api", "DefaultTask"))
                 .addSuperinterface(ClassName.get(params))
                 .addMethod(workerExecutor)
                 .addMethod(execute)

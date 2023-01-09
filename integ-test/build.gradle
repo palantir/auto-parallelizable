@@ -2,8 +2,6 @@ apply plugin: 'java-gradle-plugin'
 apply plugin: 'groovy'
 
 dependencies {
-    implementation gradleApi()
-
     annotationProcessor project(':auto-parallelizable')
     compileOnly project(':auto-parallelizable-annotations')
 
