@@ -38,6 +38,8 @@ final class MyCustom {
     static void action(Params params) {
         // do your task action here
     }
+    
+    private MyCustom() {}
 }
 ```
 
