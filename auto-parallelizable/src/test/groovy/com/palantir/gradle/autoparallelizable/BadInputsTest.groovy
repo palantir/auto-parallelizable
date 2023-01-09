@@ -135,6 +135,18 @@ class BadInputsTest {
         '''
     }
 
+    @Test
+    void 'action method must not throw any exceptions'() {
+        assertErrorProducedByFile "The 'action' method must not throw any exceptions", /* language=java */ '''
+            @AutoParallelizable
+            public final class Test {
+                interface Params {}
+                
+                static void action(Params params) throws IOException {}
+            }
+        '''
+    }
+
     private static void assertErrorProducedByFile(String error, String file) {
         String modifiedFile = /*language=java */ """
             package app;

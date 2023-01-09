@@ -163,6 +163,10 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
             successful = false;
         }
 
+        if (!action.getThrownTypes().isEmpty()) {
+            error(params, "The 'action' method must not throw any exceptions");
+        }
+
         return successful;
     }
 
