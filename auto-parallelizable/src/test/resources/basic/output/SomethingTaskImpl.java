@@ -16,6 +16,7 @@ abstract class SomethingTaskImpl extends DefaultTask implements Something.Params
         getWorkerExecutor().noIsolation().submit(SomethingWorkAction.class, params -> {
             params.getSomeString().set(getSomeString());
             params.getSomeFile().set(getSomeFile());
+            params.getSomeFiles().from(getSomeFiles());
         });
     }
 }

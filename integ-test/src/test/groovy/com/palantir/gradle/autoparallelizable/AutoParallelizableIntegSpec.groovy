@@ -33,6 +33,8 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
                 fileValue = file('file')
                 dirValue = file('dir')
                 intsValue = [1, 2 ,3] 
+                filesValue += file('lol1')
+                filesValue += file('lol2')
             }
         '''.stripIndent(true)
 
@@ -44,5 +46,6 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
         stdout.contains 'file: file'
         stdout.contains 'dir: dir'
         stdout.contains 'ints: [1, 2, 3]'
+        stdout.contains 'files: lol1, lol2'
     }
 }

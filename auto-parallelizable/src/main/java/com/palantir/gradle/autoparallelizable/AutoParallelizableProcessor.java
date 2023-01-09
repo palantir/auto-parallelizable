@@ -232,8 +232,17 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .map(ExecutableElement.class::cast)
                 .forEach(possibleMethod -> {
                     Name simpleName = possibleMethod.getSimpleName();
+
+                    String returnType = possibleMethod.getReturnType().toString();
+
+                    String setterMethod = "set";
+
+                    if (returnType.endsWith("ConfigurableFileCollection")) {
+                        setterMethod = "from";
+                    }
+
                     paramsSetters
-                            .add("params.$L().set($L());", simpleName, simpleName)
+                            .add("params.$L().$L($L());", simpleName, setterMethod, simpleName)
                             .build();
                 });
 

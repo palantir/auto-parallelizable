@@ -1,6 +1,7 @@
 package app;
 
 import com.palantir.gradle.autoparallelizable.AutoParallelizable;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 
@@ -16,6 +17,8 @@ public final class Something {
         Property<String> getSomeString();
 
         RegularFileProperty getSomeFile();
+
+        ConfigurableFileCollection getSomeFiles();
     }
 
     static void action(Params params) {

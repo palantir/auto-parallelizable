@@ -17,12 +17,16 @@
 package integtest;
 
 import com.palantir.gradle.autoparallelizable.AutoParallelizable;
+import java.io.File;
+import java.util.stream.Collectors;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 
 @AutoParallelizable
@@ -45,6 +49,9 @@ public final class DoIt {
 
         @Input
         SetProperty<Integer> getIntsValue();
+
+        @InputFiles
+        ConfigurableFileCollection getFilesValue();
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
@@ -53,6 +60,8 @@ public final class DoIt {
         System.out.println("file: " + params.getFileValue().get().getAsFile().getName());
         System.out.println("dir: " + params.getDirValue().get().getAsFile().getName());
         System.out.println("ints: " + params.getIntsValue().get());
+        System.out.println("files: "
+                + params.getFilesValue().getFiles().stream().map(File::getName).collect(Collectors.joining(", ")));
     }
 
     private DoIt() {}

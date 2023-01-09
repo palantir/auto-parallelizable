@@ -9,7 +9,7 @@ dependencies {
     annotationProcessor 'com.google.auto.service:auto-service'
     compileOnly 'com.google.auto.service:auto-service-annotations'
 
-    testImplementation localGroovy()
+    testImplementation gradleApi()
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'com.google.testing.compile:compile-testing'
