@@ -88,7 +88,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         ClassName workParamsClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkParams");
         ClassName workActionClassName = ClassName.get(packageName, typeElement.getSimpleName() + "WorkAction");
 
-        Emitter emitter = new Emitter(processingEnv.getFiler(), packageName);
+        Emitter emitter = new Emitter(processingEnv.getFiler(), packageName, typeElement);
 
         emitWorkParams(emitter, params, workParamsClassName);
 
