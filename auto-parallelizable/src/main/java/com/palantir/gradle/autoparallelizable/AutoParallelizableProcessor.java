@@ -141,12 +141,12 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         boolean successful = true;
 
         if (!action.getModifiers().contains(Modifier.STATIC)) {
-            error(params, "The 'action' method must be static");
+            error(action, "The 'action' method must be static");
             successful = false;
         }
 
         if (!action.getReturnType().getKind().equals(TypeKind.VOID)) {
-            error(params, "The 'action' method must return void");
+            error(action, "The 'action' method must return void");
             successful = false;
         }
 
@@ -154,17 +154,17 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 || !processingEnv
                         .getTypeUtils()
                         .isSameType(action.getParameters().get(0).asType(), params.asType())) {
-            error(params, "The 'action' method must take only Params");
+            error(action, "The 'action' method must take only Params");
             successful = false;
         }
 
         if (!isPackagePrivate(action)) {
-            error(params, "The 'action' method must be package-private");
+            error(action, "The 'action' method must be package-private");
             successful = false;
         }
 
         if (!action.getThrownTypes().isEmpty()) {
-            error(params, "The 'action' method must not throw any exceptions");
+            error(action, "The 'action' method must not throw any exceptions");
         }
 
         return successful;
