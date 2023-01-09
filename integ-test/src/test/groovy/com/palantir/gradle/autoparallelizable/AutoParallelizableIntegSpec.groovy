@@ -33,8 +33,7 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
                 fileValue = file('file')
                 dirValue = file('dir')
                 intsValue = [1, 2 ,3] 
-                filesValue += file('lol1')
-                filesValue += file('lol2')
+                filesValue.from(file('lol1'), file('lol2'))
             }
         '''.stripIndent(true)
 
