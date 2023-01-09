@@ -109,19 +109,21 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .collect(Collectors.toList());
 
         if (possibleParams.isEmpty()) {
-            error("Could not find interface named 'Params' in class " + typeElement.getQualifiedName());
+            error(typeElement, "Could not find interface named 'Params' in class " + typeElement.getQualifiedName());
             return Optional.empty();
         }
 
         Element paramElement = possibleParams.get(0);
 
         if (!isPackagePrivate(paramElement)) {
-            error("Params type must be package-private");
+            error(paramElement, "Params type must be package-private");
         }
 
         if (!paramElement.getKind().equals(ElementKind.INTERFACE)) {
-            error("Params type must be an interface - was a "
-                    + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
+            error(
+                    paramElement,
+                    "Params type must be an interface - was a "
+                            + paramElement.getKind().toString().toLowerCase(Locale.ROOT));
             return Optional.empty();
         }
 
@@ -136,7 +138,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .collect(Collectors.toList());
 
         if (possibleActions.isEmpty()) {
-            error("There must be a 'static void action(Params)' method that performs the task action");
+            error(typeElement, "There must be a 'static void action(Params)' method that performs the task action");
             return false;
         }
 
@@ -145,12 +147,12 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         boolean successful = true;
 
         if (!action.getModifiers().contains(Modifier.STATIC)) {
-            error("The 'action' method must be static");
+            error(params, "The 'action' method must be static");
             successful = false;
         }
 
         if (!action.getReturnType().getKind().equals(TypeKind.VOID)) {
-            error("The 'action' method must return void");
+            error(params, "The 'action' method must return void");
             successful = false;
         }
 
@@ -158,12 +160,12 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 || !processingEnv
                         .getTypeUtils()
                         .isSameType(action.getParameters().get(0).asType(), params.asType())) {
-            error("The 'action' method must take only Params");
+            error(params, "The 'action' method must take only Params");
             successful = false;
         }
 
         if (!isPackagePrivate(action)) {
-            error("The 'action' method must be package-private");
+            error(params, "The 'action' method must be package-private");
             successful = false;
         }
 
@@ -253,7 +255,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         emitter.emit(taskImplType);
     }
 
-    private void error(String error) {
-        processingEnv.getMessager().printMessage(Kind.ERROR, error);
+    private void error(Element element, String error) {
+        processingEnv.getMessager().printMessage(Kind.ERROR, error, element);
     }
 }
