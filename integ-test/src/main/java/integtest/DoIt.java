@@ -52,6 +52,10 @@ public final class DoIt {
 
         @InputFiles
         ConfigurableFileCollection getFilesValue();
+
+        default String stringsRealValue() {
+            return getStringValue().get();
+        }
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")

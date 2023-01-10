@@ -19,6 +19,10 @@ public final class Something {
         RegularFileProperty getSomeFile();
 
         ConfigurableFileCollection getSomeFiles();
+
+        default String someStringsValue() {
+            return getSomeString().get();
+        }
     }
 
     static void action(Params params) {

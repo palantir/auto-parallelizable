@@ -233,6 +233,10 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .filter(element -> element.getKind().equals(ElementKind.METHOD))
                 .map(ExecutableElement.class::cast)
                 .forEach(possibleMethod -> {
+                    if (possibleMethod.getModifiers().contains(Modifier.DEFAULT)) {
+                        return;
+                    }
+
                     Name simpleName = possibleMethod.getSimpleName();
 
                     String returnType = possibleMethod.getReturnType().toString();
