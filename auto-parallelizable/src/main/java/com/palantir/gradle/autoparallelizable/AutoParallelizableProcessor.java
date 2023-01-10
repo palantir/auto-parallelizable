@@ -111,6 +111,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
         if (!isPackagePrivate(paramElement)) {
             error(paramElement, "Params type must be package-private");
+            return Optional.empty();
         }
 
         if (!paramElement.getKind().equals(ElementKind.INTERFACE)) {
@@ -165,6 +166,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
 
         if (!action.getThrownTypes().isEmpty()) {
             error(action, "The 'action' method must not throw any exceptions");
+            successful = false;
         }
 
         return successful;
