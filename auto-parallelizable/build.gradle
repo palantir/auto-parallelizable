@@ -1,7 +1,16 @@
 apply plugin: 'java-library'
+apply plugin: 'groovy'
 apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
+    implementation project(':auto-parallelizable-annotations')
+    implementation 'com.palantir.goethe:goethe'
+
+    annotationProcessor 'com.google.auto.service:auto-service'
+    compileOnly 'com.google.auto.service:auto-service-annotations'
+
+    testImplementation gradleApi()
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.assertj:assertj-core'
+    testImplementation 'com.google.testing.compile:compile-testing'
 }

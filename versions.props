@@ -2,7 +2,10 @@ com.netflix.nebula:nebula-test = 10.1.0
 org.junit.jupiter:* = 5.9.1
 org.assertj:assertj-core = 3.23.1
 org.mockito:* = 4.9.0
-com.palantir.gradle.utils:* = 0.1.0
+com.google.testing.compile:* = 0.21.0
+com.google.auto.service:* = 1.0.1
+com.palantir.goethe:* = 0.9.0
+
 
 # conflict resolution
 com.google.code.findbugs:jsr305 = 3.0.2

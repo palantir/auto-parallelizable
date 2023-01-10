@@ -1,0 +1,13 @@
+apply plugin: 'java-gradle-plugin'
+apply plugin: 'groovy'
+
+dependencies {
+    annotationProcessor project(':auto-parallelizable')
+    compileOnly project(':auto-parallelizable-annotations')
+
+    // Dependency to enable injection into nebula-test
+    testImplementation project(':auto-parallelizable')
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.netflix.nebula:nebula-test'
+}
