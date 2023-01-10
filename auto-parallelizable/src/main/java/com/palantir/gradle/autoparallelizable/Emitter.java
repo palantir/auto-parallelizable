@@ -27,8 +27,6 @@ import javax.lang.model.element.Element;
 final class Emitter {
     private final Filer filer;
     private final String packageName;
-
-    @SuppressWarnings("StrictUnusedVariable")
     private final Element originatingElement;
 
     Emitter(Filer filer, String packageName, Element originatingElement) {
@@ -42,6 +40,7 @@ final class Emitter {
                 .addAnnotation(AnnotationSpec.builder(Generated.class)
                         .addMember("value", "$S", AutoParallelizableProcessor.class.getCanonicalName())
                         .build())
+                .addOriginatingElement(originatingElement)
                 .build();
 
         JavaFile javaFile = JavaFile.builder(packageName, newTypeSpec)
