@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: '`Params` default methods can be used without causing compile failures.'
+  links:
+  - https://github.com/palantir/auto-parallelizable/pull/5
