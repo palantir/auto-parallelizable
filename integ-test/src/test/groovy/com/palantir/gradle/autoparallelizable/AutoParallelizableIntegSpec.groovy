@@ -66,7 +66,7 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
         '''.stripIndent(true)
 
         when:
-        def stdout = runTasksSuccessfully('doIt', '-Pautoparallelizable-inject-test').standardOutput
+        def stdout = runTasksSuccessfully('doIt', '-Pautoparallelizable-inject-test=yes').standardOutput
 
         then:
         stdout.contains 'provider: yes'
