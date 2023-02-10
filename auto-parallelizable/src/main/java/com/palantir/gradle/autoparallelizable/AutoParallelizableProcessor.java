@@ -16,12 +16,16 @@
 
 package com.palantir.gradle.autoparallelizable;
 
+import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
+import com.google.common.collect.Iterables;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import java.util.List;
 import java.util.Locale;
@@ -38,11 +42,13 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
 
 @AutoService(Processor.class)
 public final class AutoParallelizableProcessor extends AbstractProcessor {
+
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(AutoParallelizable.class.getCanonicalName());
@@ -126,12 +132,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
     }
 
     private boolean verifyActionMethod(TypeElement typeElement, TypeElement params) {
-        List<ExecutableElement> possibleActions = typeElement.getEnclosedElements().stream()
-                .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
-                .map(ExecutableElement.class::cast)
-                .filter(element -> element.getSimpleName().toString().equals("action"))
-                .collect(Collectors.toList());
-
+        List<ExecutableElement> possibleActions = findActionMethod(typeElement);
         if (possibleActions.isEmpty()) {
             error(typeElement, "There must be a 'static void action(Params)' method that performs the task action");
             return false;
@@ -151,12 +152,30 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
             successful = false;
         }
 
-        if (action.getParameters().size() != 1
-                || !processingEnv
-                        .getTypeUtils()
-                        .isSameType(action.getParameters().get(0).asType(), params.asType())) {
-            error(action, "The 'action' method must take only Params");
+        long numberOfParamsArguments = action.getParameters().stream()
+                .filter(actionParameter -> isSameType(actionParameter, params))
+                .count();
+        if (numberOfParamsArguments == 0) {
+            error(action, "The 'action' method must have a Params argument");
             successful = false;
+        }
+
+        if (numberOfParamsArguments > 1) {
+            error(action, "The 'action' method must have at most one Params argument");
+            successful = false;
+        }
+
+        List<? extends VariableElement> remainingParameters = action.getParameters().stream()
+                .filter(actionParameter -> !isSameType(actionParameter, params))
+                .collect(Collectors.toList());
+        for (VariableElement remainingParameter : remainingParameters) {
+            boolean hasInjectAnnotation = isInjectable(remainingParameter);
+            if (!hasInjectAnnotation) {
+                error(
+                        remainingParameter,
+                        "Any non 'Param' annotation must be marked with the @AutoParallelizable.Inject annotation");
+                successful = false;
+            }
         }
 
         if (!isPackagePrivate(action)) {
@@ -170,6 +189,22 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         }
 
         return successful;
+    }
+
+    private static boolean isInjectable(VariableElement parameter) {
+        return MoreElements.isAnnotationPresent(parameter, AutoParallelizable.Inject.class);
+    }
+
+    private static List<ExecutableElement> findActionMethod(TypeElement typeElement) {
+        return typeElement.getEnclosedElements().stream()
+                .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
+                .map(ExecutableElement.class::cast)
+                .filter(element -> element.getSimpleName().toString().equals("action"))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isSameType(Element first, Element second) {
+        return processingEnv.getTypeUtils().isSameType(first.asType(), second.asType());
     }
 
     private boolean isPackagePrivate(Element element) {
@@ -190,6 +225,12 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
     }
 
     private void emitWorkAction(Emitter emitter, TypeElement typeElement, ClassName workParamsClassName) {
+        ExecutableElement actionMethod = Iterables.getOnlyElement(findActionMethod(typeElement));
+        List<MethodSpec> injectableMethods = actionMethod.getParameters().stream()
+                .filter(AutoParallelizableProcessor::isInjectable)
+                .map(injectable ->
+                        injectMethod(ClassName.get(injectable.asType()), getMethodNameBasedOnType(injectable)))
+                .collect(Collectors.toList());
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
@@ -198,18 +239,22 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC)
                 .build();
 
+        String format = actionMethod.getParameters().stream()
+                .map(parameter ->
+                        isInjectable(parameter) ? getMethodNameBasedOnType(parameter) + "()" : "getParameters()")
+                .collect(Collectors.joining(", ", "$T.action(", ");"));
+
         MethodSpec workActionExecute = MethodSpec.methodBuilder("execute")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addCode(CodeBlock.builder()
-                        .add("$T.action(getParameters());", typeElement.asType())
-                        .build())
+                .addCode(CodeBlock.builder().add(format, typeElement.asType()).build())
                 .build();
 
         TypeSpec workActionType = TypeSpec.classBuilder(typeElement.getSimpleName() + "WorkAction")
                 .addModifiers(Modifier.ABSTRACT)
                 .addSuperinterface(ParameterizedTypeName.get(
                         ClassName.get("org.gradle.workers", "WorkAction"), workParamsClassName))
+                .addMethods(injectableMethods)
                 .addMethod(constructor)
                 .addMethod(workActionExecute)
                 .build();
@@ -217,13 +262,14 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         emitter.emit(workActionType);
     }
 
+    private static String getMethodNameBasedOnType(VariableElement injectable) {
+        return "get" + MoreTypes.asElement(injectable.asType()).getSimpleName();
+    }
+
     private void emitTaskImpl(
             Emitter emitter, TypeElement typeElement, TypeElement params, ClassName workActionClassName) {
-        MethodSpec workerExecutor = MethodSpec.methodBuilder("getWorkerExecutor")
-                .addAnnotation(ClassName.get("javax.inject", "Inject"))
-                .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
-                .returns(ClassName.get("org.gradle.workers", "WorkerExecutor"))
-                .build();
+        MethodSpec workerExecutor =
+                injectMethod(ClassName.get("org.gradle.workers", "WorkerExecutor"), "getWorkerExecutor");
 
         CodeBlock.Builder paramsSetters = CodeBlock.builder()
                 .add("$N().noIsolation().submit($T.class, params -> {", workerExecutor, workActionClassName)
@@ -267,6 +313,14 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .build();
 
         emitter.emit(taskImplType);
+    }
+
+    private static MethodSpec injectMethod(TypeName returns, String methodName) {
+        return MethodSpec.methodBuilder(methodName)
+                .addAnnotation(ClassName.get("javax.inject", "Inject"))
+                .addModifiers(Modifier.PROTECTED, Modifier.ABSTRACT)
+                .returns(returns)
+                .build();
     }
 
     private void error(Element element, String error) {
