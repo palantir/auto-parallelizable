@@ -55,3 +55,24 @@ public abstract class MyCustomTask extends MyCustomTaskImpl {
 ```
 
 Compile your code and the files `MyCustomTaskImpl`, `MyCustomWorkParams`, `MyCustomWorkAction` will be generated for you!
+
+### Gradle Service Injection
+
+You can inject [Gradle Services](https://docs.gradle.org/current/userguide/custom_gradle_types.html#service_injection) into your `action` method like so:
+
+```java
+import com.palantir.gradle.autoparallelizable.AutoParallelizable.Inject;
+
+@AutoParallelizable
+final class MyCustom {
+    // Params etc ...
+    
+    static void action(
+            Params params, 
+            @Inject ExecOperations execOperations,
+            @Inject ProviderFactory providerFactory) {
+        
+        // Use your injected services here!
+    }
+}
+```

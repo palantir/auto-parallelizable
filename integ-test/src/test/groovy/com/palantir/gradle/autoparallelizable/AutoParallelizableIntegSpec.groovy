@@ -48,6 +48,35 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
         stdout.contains 'files: lol1, lol2'
     }
 
+    def "@Inject parameters can be specified and injected"() {
+        file('file')
+        directory('dir')
+
+        // language=gradle
+        buildFile << '''
+            import integtest.DoItInjectedParameter.DoItInjectedParameterTask
+            
+            task doIt(type: DoItInjectedParameterTask) {
+                stringValue = 'heh'
+                fileValue = file('file')
+                dirValue = file('dir')
+                intsValue = [1, 2 ,3] 
+                filesValue.from(file('lol1'), file('lol2'))
+            }
+        '''.stripIndent(true)
+
+        when:
+        def stdout = runTasksSuccessfully('doIt', '-Pautoparallelizable-inject-test=yes').standardOutput
+
+        then:
+        stdout.contains 'provider: yes'
+        stdout.contains 'string: heh'
+        stdout.contains 'file: file'
+        stdout.contains 'dir: dir'
+        stdout.contains 'ints: [1, 2, 3]'
+        stdout.contains 'files: lol1, lol2'
+    }
+
     def 'make sure it is incremental'() {
         /* language=gradle */
         buildFile << '''

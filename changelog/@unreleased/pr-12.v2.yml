@@ -1,0 +1,6 @@
+type: fix
+fix:
+  description: Can inject `@AutoParallelizable.Inject` parameters into your `action`
+    method to [inject Gradle services](https://docs.gradle.org/current/userguide/custom_gradle_types.html#service_injection).
+  links:
+  - https://github.com/palantir/auto-parallelizable/pull/12

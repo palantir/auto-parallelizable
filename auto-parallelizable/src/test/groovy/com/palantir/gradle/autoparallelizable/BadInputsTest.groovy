@@ -95,7 +95,7 @@ class BadInputsTest {
             }
         '''
 
-        assertErrorProducedByFile "The 'action' method must take only Params", /* language=java */ '''
+        assertErrorProducedByFile "The 'action' method must have a Params argument", /* language=java */ '''
             @AutoParallelizable
             public final class Test {
                 interface Params {}
@@ -104,7 +104,7 @@ class BadInputsTest {
             }
         '''
 
-        assertErrorProducedByFile "The 'action' method must take only Params", /* language=java */ '''
+        assertErrorProducedByFile "Any non 'Param' annotation must be marked with the @AutoParallelizable.Inject annotation", /* language=java */ '''
             @AutoParallelizable
             public final class Test {
                 interface Params {}
@@ -113,7 +113,7 @@ class BadInputsTest {
             }
         '''
 
-        assertErrorProducedByFile "The 'action' method must take only Params", /* language=java */ '''
+        assertErrorProducedByFile "Any non 'Param' annotation must be marked with the @AutoParallelizable.Inject annotation", /* language=java */ '''
             @AutoParallelizable
             public final class Test {
                 interface Params {}

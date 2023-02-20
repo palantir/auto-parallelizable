@@ -23,4 +23,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-public @interface AutoParallelizable {}
+public @interface AutoParallelizable {
+
+    @Retention(RetentionPolicy.SOURCE)
+    @Target(ElementType.PARAMETER)
+    @interface Inject {}
+}
