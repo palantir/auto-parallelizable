@@ -89,9 +89,23 @@ final class MyCustom {
         Property<String> getString();
     }
     
+    interface DoubleNested {
+        
+        Property<String> getDescription();
+        
+        @Nested
+        Nested getNested();
+    }
+    
     interface Params {
         @Nested
         Nested getNested();
+        
+        @Nested
+        DoubleNested getDoubleNested();
+        
+        @Nested
+        ListProperty<Nested> getNestedList();
 
         @OutputFile
         RegularFileProperty getOutput();
