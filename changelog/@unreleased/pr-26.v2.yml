@@ -1,0 +1,5 @@
+type: improvement
+improvement:
+  description: Allow use of `@Nested` properties inside `Params`.
+  links:
+  - https://github.com/palantir/auto-parallelizable/pull/26
