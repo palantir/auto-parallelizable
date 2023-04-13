@@ -195,6 +195,10 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         return MoreElements.isAnnotationPresent(parameter, AutoParallelizable.Inject.class);
     }
 
+    private static boolean isNestedProperty(Element element) {
+        return MoreElements.isAnnotationPresent(element, "org.gradle.api.tasks.Nested");
+    }
+
     private static List<ExecutableElement> findActionMethod(TypeElement typeElement) {
         return typeElement.getEnclosedElements().stream()
                 .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
@@ -275,28 +279,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .add("$N().noIsolation().submit($T.class, params -> {", workerExecutor, workActionClassName)
                 .indent();
 
-        params.getEnclosedElements().stream()
-                .filter(element -> element.getKind().equals(ElementKind.METHOD))
-                .map(ExecutableElement.class::cast)
-                .forEach(possibleMethod -> {
-                    if (possibleMethod.getModifiers().contains(Modifier.DEFAULT)) {
-                        return;
-                    }
-
-                    Name simpleName = possibleMethod.getSimpleName();
-
-                    String returnType = possibleMethod.getReturnType().toString();
-
-                    String setterMethod = "set";
-
-                    if (returnType.endsWith("ConfigurableFileCollection")) {
-                        setterMethod = "from";
-                    }
-
-                    paramsSetters
-                            .add("params.$L().$L($L());", simpleName, setterMethod, simpleName)
-                            .build();
-                });
+        handleParamsLikeElement(paramsSetters, "params", "this", params);
 
         MethodSpec execute = MethodSpec.methodBuilder("execute")
                 .addAnnotation(ClassName.get("org.gradle.api.tasks", "TaskAction"))
@@ -313,6 +296,42 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .build();
 
         emitter.emit(taskImplType);
+    }
+
+    private void handleParamsLikeElement(
+            CodeBlock.Builder builder, String writerContext, String readerContext, TypeElement paramsLikeElement) {
+        paramsLikeElement.getEnclosedElements().stream()
+                .filter(element -> element.getKind().equals(ElementKind.METHOD))
+                .map(ExecutableElement.class::cast)
+                .forEach(possibleMethod -> {
+                    if (possibleMethod.getModifiers().contains(Modifier.DEFAULT)) {
+                        return;
+                    }
+
+                    if (isNestedProperty(possibleMethod)) {
+                        TypeElement nestedParamsLikeElement = MoreTypes.asTypeElement(possibleMethod.getReturnType());
+                        String newContextSuffix = possibleMethod.getSimpleName().toString() + "()";
+                        handleParamsLikeElement(
+                                builder,
+                                writerContext + "." + newContextSuffix,
+                                readerContext + "." + newContextSuffix,
+                                nestedParamsLikeElement);
+                        return;
+                    }
+
+                    Name simpleName = possibleMethod.getSimpleName();
+
+                    String returnType = possibleMethod.getReturnType().toString();
+
+                    String setterMethod = "set";
+
+                    if (returnType.endsWith("ConfigurableFileCollection")) {
+                        setterMethod = "from";
+                    }
+
+                    builder.add(
+                            "$L.$L().$L($L.$L());", writerContext, simpleName, setterMethod, readerContext, simpleName);
+                });
     }
 
     private static MethodSpec injectMethod(TypeName returns, String methodName) {

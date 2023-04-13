@@ -77,6 +77,34 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
         stdout.contains 'files: lol1, lol2'
     }
 
+    def "@Nested read only managed properties are handled correctly"() {
+        file('file')
+        directory('dir')
+
+        // language=gradle
+        buildFile << '''
+            import integtest.DoItNested.DoItNestedTask
+            
+            task doIt(type: DoItNestedTask) {
+                doubleNested.nested.stringValue = 'heh'
+                abstractNested.fileValue = file('file')
+                dirValue = file('dir')
+                doubleNested.intsValue = [1, 2 ,3] 
+                doubleNested.nested.filesValue.from(file('lol1'), file('lol2'))
+            }
+        '''.stripIndent(true)
+
+        when:
+        def stdout = runTasksSuccessfully('doIt', '-Pautoparallelizable-inject-test=yes').standardOutput
+
+        then:
+        stdout.contains 'string: heh'
+        stdout.contains 'file: file'
+        stdout.contains 'dir: dir'
+        stdout.contains 'ints: [1, 2, 3]'
+        stdout.contains 'files: lol1, lol2'
+    }
+
     def 'make sure it is incremental'() {
         /* language=gradle */
         buildFile << '''

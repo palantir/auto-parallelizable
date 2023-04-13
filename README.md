@@ -76,3 +76,32 @@ final class MyCustom {
     }
 }
 ```
+
+### Read-only managed nested properties 
+You can use [Read-only managed nested properties](https://docs.gradle.org/current/userguide/custom_gradle_types.html#read_only_managed_nested_properties) 
+in your `Params` interface. Properties will be recursively set.
+
+```java
+@AutoParallelizable
+final class MyCustom {
+    interface Nested {
+        @Input
+        Property<String> getString();
+    }
+    
+    interface Params {
+        @Nested
+        Nested getNested();
+
+        @OutputFile
+        RegularFileProperty getOutput();
+    }
+    
+    // action etc ...
+    
+    private MyCustom() {}
+}
+```
+
+_Note: If you are using a nested type you don't own, bear in mind that you will need to recompile against newer versions 
+to have any new properties copied over._  
