@@ -77,6 +77,49 @@ class AutoParallelizableIntegSpec extends IntegrationSpec {
         stdout.contains 'files: lol1, lol2'
     }
 
+    def "@Nested read only managed properties are handled correctly"() {
+        file('file')
+        directory('dir')
+
+        // language=gradle
+        buildFile << '''
+            import integtest.DoItNested
+            import integtest.DoItNested.DoItNestedTask
+            
+            DoItNested.Nested makeNested(value) {
+              def property = objects.newInstance(DoItNested.Nested)
+              property.stringValue = value
+              property
+            }
+            
+            task doIt(type: DoItNestedTask) {
+                doubleNested.nested.stringValue = 'heh'
+                abstractNested.fileValue = file('file')
+                dirValue = file('dir')
+                doubleNested.intsValue = [1, 2 ,3] 
+                doubleNested.nested.filesValue.from(file('lol1'), file('lol2'))             
+                nestedProperties.setProperty.add(makeNested('set'))
+                nestedProperties.listProperty.add(makeNested('list'))
+                nestedProperties.mapProperty.put("map", makeNested('map'))
+                nestedProperties.property = makeNested('property')
+            }
+        '''.stripIndent(true)
+
+        when:
+        def stdout = runTasksSuccessfully('doIt', '-Pautoparallelizable-inject-test=yes').standardOutput
+
+        then:
+        stdout.contains 'string: heh'
+        stdout.contains 'file: file'
+        stdout.contains 'dir: dir'
+        stdout.contains 'ints: [1, 2, 3]'
+        stdout.contains 'files: lol1, lol2'
+        stdout.contains 'from property: property'
+        stdout.contains 'from map: map'
+        stdout.contains 'from list: list'
+        stdout.contains 'from set: set'
+    }
+
     def 'make sure it is incremental'() {
         /* language=gradle */
         buildFile << '''

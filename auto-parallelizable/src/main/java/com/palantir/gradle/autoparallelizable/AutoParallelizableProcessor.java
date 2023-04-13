@@ -20,6 +20,7 @@ import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -32,6 +33,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -44,10 +46,16 @@ import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 
 @AutoService(Processor.class)
 public final class AutoParallelizableProcessor extends AbstractProcessor {
+
+    private static final Set<String> SETTABLE_PROPERTY_CLASSES = Set.of(
+            "org.gradle.api.provider.Property",
+            "org.gradle.api.provider.HasMultipleValues",
+            "org.gradle.api.provider.MapProperty");
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -195,6 +203,10 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
         return MoreElements.isAnnotationPresent(parameter, AutoParallelizable.Inject.class);
     }
 
+    private static boolean isNested(Element element) {
+        return MoreElements.isAnnotationPresent(element, "org.gradle.api.tasks.Nested");
+    }
+
     private static List<ExecutableElement> findActionMethod(TypeElement typeElement) {
         return typeElement.getEnclosedElements().stream()
                 .filter(subElement -> subElement.getKind().equals(ElementKind.METHOD))
@@ -275,28 +287,7 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .add("$N().noIsolation().submit($T.class, params -> {", workerExecutor, workActionClassName)
                 .indent();
 
-        params.getEnclosedElements().stream()
-                .filter(element -> element.getKind().equals(ElementKind.METHOD))
-                .map(ExecutableElement.class::cast)
-                .forEach(possibleMethod -> {
-                    if (possibleMethod.getModifiers().contains(Modifier.DEFAULT)) {
-                        return;
-                    }
-
-                    Name simpleName = possibleMethod.getSimpleName();
-
-                    String returnType = possibleMethod.getReturnType().toString();
-
-                    String setterMethod = "set";
-
-                    if (returnType.endsWith("ConfigurableFileCollection")) {
-                        setterMethod = "from";
-                    }
-
-                    paramsSetters
-                            .add("params.$L().$L($L());", simpleName, setterMethod, simpleName)
-                            .build();
-                });
+        handleParamsLikeElement(paramsSetters, "params", "this", params);
 
         MethodSpec execute = MethodSpec.methodBuilder("execute")
                 .addAnnotation(ClassName.get("org.gradle.api.tasks", "TaskAction"))
@@ -313,6 +304,59 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .build();
 
         emitter.emit(taskImplType);
+    }
+
+    private void handleParamsLikeElement(
+            CodeBlock.Builder builder, String writerContext, String readerContext, TypeElement paramsLikeElement) {
+        paramsLikeElement.getEnclosedElements().stream()
+                .filter(element -> element.getKind().equals(ElementKind.METHOD))
+                .map(ExecutableElement.class::cast)
+                .forEach(possibleMethod -> {
+                    if (possibleMethod.getModifiers().contains(Modifier.DEFAULT)) {
+                        return;
+                    }
+
+                    if (isNested(possibleMethod) && doesNotReturnASettableProperty(possibleMethod)) {
+                        TypeElement nestedParamsLikeElement = MoreTypes.asTypeElement(possibleMethod.getReturnType());
+                        String newContextSuffix = possibleMethod.getSimpleName().toString() + "()";
+                        handleParamsLikeElement(
+                                builder,
+                                writerContext + "." + newContextSuffix,
+                                readerContext + "." + newContextSuffix,
+                                nestedParamsLikeElement);
+                        return;
+                    }
+
+                    Name simpleName = possibleMethod.getSimpleName();
+
+                    String returnType = possibleMethod.getReturnType().toString();
+
+                    String setterMethod = "set";
+
+                    if (returnType.endsWith("ConfigurableFileCollection")) {
+                        setterMethod = "from";
+                    }
+
+                    builder.add(
+                            "$L.$L().$L($L.$L());", writerContext, simpleName, setterMethod, readerContext, simpleName);
+                });
+    }
+
+    private boolean doesNotReturnASettableProperty(ExecutableElement method) {
+        Set<TypeElement> settablePropertyElements = SETTABLE_PROPERTY_CLASSES.stream()
+                .map(className -> processingEnv.getElementUtils().getTypeElement(className))
+                .collect(Collectors.toSet());
+        Set<TypeElement> returnTypeHierarchyElements = allSuperTypeElements(method.getReturnType());
+        return Sets.intersection(settablePropertyElements, returnTypeHierarchyElements)
+                .isEmpty();
+    }
+
+    private Set<TypeElement> allSuperTypeElements(TypeMirror type) {
+        return Stream.concat(
+                        Stream.of(MoreTypes.asTypeElement(type)),
+                        processingEnv.getTypeUtils().directSupertypes(type).stream()
+                                .flatMap(supertype -> allSuperTypeElements(supertype).stream()))
+                .collect(Collectors.toSet());
     }
 
     private static MethodSpec injectMethod(TypeName returns, String methodName) {
