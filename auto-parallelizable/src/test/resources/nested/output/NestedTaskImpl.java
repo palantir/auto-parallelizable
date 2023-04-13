@@ -45,6 +45,10 @@ abstract class NestedTaskImpl extends DefaultTask implements Nested.Params {
                             .getDoublyNestedInterface()
                             .getNestedInterface()
                             .getString());
+            params.getSetPropertyNested().set(this.getSetPropertyNested());
+            params.getListPropertyNested().set(this.getListPropertyNested());
+            params.getPropertyNested().set(this.getPropertyNested());
+            params.getMapPropertyNested().set(this.getMapPropertyNested());
         });
     }
 }

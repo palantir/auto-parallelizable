@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Input;
@@ -42,7 +44,7 @@ public final class DoItNested {
         abstract RegularFileProperty getFileValue();
     }
 
-    interface Nested {
+    public interface Nested {
         @Input
         Property<String> getStringValue();
 
@@ -59,6 +61,20 @@ public final class DoItNested {
         Nested getNested();
     }
 
+    interface NestedProperties {
+        @org.gradle.api.tasks.Nested
+        ListProperty<Nested> getListProperty();
+
+        @org.gradle.api.tasks.Nested
+        SetProperty<Nested> getSetProperty();
+
+        @org.gradle.api.tasks.Nested
+        MapProperty<String, Nested> getMapProperty();
+
+        @org.gradle.api.tasks.Nested
+        Property<Nested> getProperty();
+    }
+
     interface Params {
         @org.gradle.api.tasks.Nested
         DoubleNested getDoubleNested();
@@ -68,6 +84,9 @@ public final class DoItNested {
 
         @InputDirectory
         DirectoryProperty getDirValue();
+
+        @org.gradle.api.tasks.Nested
+        NestedProperties getNestedProperties();
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
@@ -82,6 +101,32 @@ public final class DoItNested {
                 + params.getDoubleNested().getNested().getFilesValue().getFiles().stream()
                         .map(File::getName)
                         .collect(Collectors.joining(", ")));
+        System.out.println("from property: "
+                + params.getNestedProperties()
+                        .getProperty()
+                        .get()
+                        .getStringValue()
+                        .get());
+        System.out.println("from list: "
+                + params.getNestedProperties()
+                        .getListProperty()
+                        .get()
+                        .get(0)
+                        .getStringValue()
+                        .get());
+        System.out.println("from set: "
+                + params.getNestedProperties().getSetProperty().get().stream()
+                        .findFirst()
+                        .get()
+                        .getStringValue()
+                        .get());
+        System.out.println("from map: "
+                + params.getNestedProperties()
+                        .getMapProperty()
+                        .get()
+                        .get("map")
+                        .getStringValue()
+                        .get());
     }
 
     private DoItNested() {}

@@ -17,7 +17,10 @@
 package app;
 
 import com.palantir.gradle.autoparallelizable.AutoParallelizable;
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.SetProperty;
 
 @AutoParallelizable
 public final class Nested {
@@ -60,6 +63,18 @@ public final class Nested {
 
         @org.gradle.api.tasks.Nested
         TripleNested getTripleNestedInterface();
+
+        @org.gradle.api.tasks.Nested
+        SetProperty<NestedInterface> getSetPropertyNested();
+
+        @org.gradle.api.tasks.Nested
+        ListProperty<NestedInterface> getListPropertyNested();
+
+        @org.gradle.api.tasks.Nested
+        Property<NestedInterface> getPropertyNested();
+
+        @org.gradle.api.tasks.Nested
+        MapProperty<String, NestedInterface> getMapPropertyNested();
     }
 
     static void action(Params params) {
