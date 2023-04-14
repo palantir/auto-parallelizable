@@ -55,7 +55,8 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
     private static final Set<String> SETTABLE_PROPERTY_CLASSES = Set.of(
             "org.gradle.api.provider.Property",
             "org.gradle.api.provider.HasMultipleValues",
-            "org.gradle.api.provider.MapProperty");
+            "org.gradle.api.provider.MapProperty",
+            "org.gradle.api.file.ConfigurableFileCollection");
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -312,11 +313,14 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 .filter(element -> element.getKind().equals(ElementKind.METHOD))
                 .map(ExecutableElement.class::cast)
                 .forEach(possibleMethod -> {
-                    if (possibleMethod.getModifiers().contains(Modifier.DEFAULT)) {
+                    if (possibleMethod.getModifiers().contains(Modifier.DEFAULT)
+                            || possibleMethod.getModifiers().contains(Modifier.PRIVATE)
+                            || !possibleMethod.getParameters().isEmpty()
+                            || (!isNested(possibleMethod) && !returnsSettableProperty(possibleMethod))) {
                         return;
                     }
 
-                    if (isNested(possibleMethod) && doesNotReturnASettableProperty(possibleMethod)) {
+                    if (isNested(possibleMethod) && !returnsSettableProperty(possibleMethod)) {
                         TypeElement nestedParamsLikeElement = MoreTypes.asTypeElement(possibleMethod.getReturnType());
                         String newContextSuffix = possibleMethod.getSimpleName().toString() + "()";
                         handleParamsLikeElement(
@@ -342,12 +346,12 @@ public final class AutoParallelizableProcessor extends AbstractProcessor {
                 });
     }
 
-    private boolean doesNotReturnASettableProperty(ExecutableElement method) {
+    private boolean returnsSettableProperty(ExecutableElement method) {
         Set<TypeElement> settablePropertyElements = SETTABLE_PROPERTY_CLASSES.stream()
                 .map(className -> processingEnv.getElementUtils().getTypeElement(className))
                 .collect(Collectors.toSet());
         Set<TypeElement> returnTypeHierarchyElements = allSuperTypeElements(method.getReturnType());
-        return Sets.intersection(settablePropertyElements, returnTypeHierarchyElements)
+        return !Sets.intersection(settablePropertyElements, returnTypeHierarchyElements)
                 .isEmpty();
     }
 
