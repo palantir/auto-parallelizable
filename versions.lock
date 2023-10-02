@@ -9,7 +9,7 @@ com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 c
 com.google.j2objc:j2objc-annotations:1.3 (1 constraints: b809eda0)
 com.palantir.goethe:goethe:0.12.0 (1 constraints: 3505293b)
 com.squareup:javapoet:1.13.0 (1 constraints: f50b65f7)
-org.checkerframework:checker-qual:3.38.0 (4 constraints: 622cc6d5)
+org.checkerframework:checker-qual:3.39.0 (4 constraints: 632c3dd6)
 
 [Test dependencies]
 cglib:cglib-nodep:3.2.2 (1 constraints: 490ded24)
