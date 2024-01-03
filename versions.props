@@ -1,6 +1,6 @@
 com.netflix.nebula:nebula-test = 10.1.0
 org.junit.jupiter:* = 5.10.1
-org.assertj:assertj-core = 3.25.0
+org.assertj:assertj-core = 3.25.1
 com.google.testing.compile:* = 0.21.0
 com.google.auto.service:* = 1.1.1
 com.palantir.goethe:* = 0.12.0
