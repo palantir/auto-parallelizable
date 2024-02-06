@@ -1,4 +1,4 @@
-# Run ./gradlew --write-locks to regenerate this file
+# Run ./gradlew writeVersionsLock to regenerate this file
 com.google.auto:auto-common:1.2.1 (1 constraints: 17120ffb)
 com.google.auto.service:auto-service-annotations:1.1.1 (1 constraints: 0505f435)
 com.google.code.findbugs:jsr305:3.0.2 (2 constraints: 1d0fb186)
