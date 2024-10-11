@@ -10,7 +10,7 @@ com.google.j2objc:j2objc-annotations:1.3 (1 constraints: b809eda0)
 com.palantir.goethe:goethe:0.13.0 (1 constraints: 36052c3b)
 com.palantir.javapoet:javapoet:0.1.0 (1 constraints: c10b63eb)
 com.squareup:javapoet:1.13.0 (1 constraints: f50b65f7)
-org.checkerframework:checker-qual:3.48.0 (4 constraints: 632c3ed6)
+org.checkerframework:checker-qual:3.48.1 (4 constraints: 642cb3d6)
 
 [Test dependencies]
 cglib:cglib-nodep:3.2.2 (1 constraints: 490ded24)
