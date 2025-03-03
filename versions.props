@@ -1,5 +1,5 @@
 com.netflix.nebula:nebula-test = 10.6.2
-org.junit.jupiter:* = 5.11.4
+org.junit.jupiter:* = 5.12.0
 org.assertj:assertj-core = 3.27.3
 com.google.testing.compile:* = 0.21.0
 com.google.auto.service:* = 1.1.1
@@ -10,4 +10,4 @@ com.palantir.goethe:* = 0.14.0
 com.google.code.findbugs:jsr305 = 3.0.2
 com.google.errorprone:error_prone_annotations = 2.11.0
 org.checkerframework:checker-qual = 3.49.0
-org.junit.platform:* = 1.11.4
+org.junit.platform:* = 1.12.0
