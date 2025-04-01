@@ -12,3 +12,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'com.netflix.nebula:nebula-test'
 }
+
+gradleTestUtils {
+    gradleVersions = ['7.6.4', '8.8', '8.12.1']
+}
