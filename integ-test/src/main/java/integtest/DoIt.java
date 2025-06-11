@@ -58,7 +58,7 @@ public final class DoIt {
         }
     }
 
-    @SuppressWarnings("checkstyle:RegexpSinglelineJava")
+    @SuppressWarnings({"checkstyle:RegexpSinglelineJava", "for-rollout:SystemOut"})
     static void action(Params params) {
         System.out.println("string: " + params.getStringValue().get());
         System.out.println("file: " + params.getFileValue().get().getAsFile().getName());
