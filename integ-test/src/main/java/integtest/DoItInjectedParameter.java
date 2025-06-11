@@ -60,7 +60,7 @@ public final class DoItInjectedParameter {
         }
     }
 
-    @SuppressWarnings("checkstyle:RegexpSinglelineJava")
+    @SuppressWarnings({"checkstyle:RegexpSinglelineJava", "for-rollout:SystemOut"})
     static void action(Params params, @Inject ProviderFactory providerFactory) {
         System.out.println("provider: "
                 + providerFactory

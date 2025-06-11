@@ -89,7 +89,7 @@ public final class DoItNested {
         NestedProperties getNestedProperties();
     }
 
-    @SuppressWarnings("checkstyle:RegexpSinglelineJava")
+    @SuppressWarnings({"checkstyle:RegexpSinglelineJava", "for-rollout:SystemOut"})
     static void action(Params params) {
         System.out.println("string: "
                 + params.getDoubleNested().getNested().getStringValue().get());
