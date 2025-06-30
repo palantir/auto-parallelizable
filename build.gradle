@@ -18,7 +18,6 @@ buildscript {
         classpath 'com.palantir.gradle.gitversion:gradle-git-version:4.0.0'
         classpath 'com.palantir.gradle.guide:gradle-guide:1.7.0'
         classpath 'com.palantir.gradle.idea-configuration:gradle-idea-configuration:0.4.0'
-        classpath 'gradle.plugin.org.inferred:gradle-processors:3.7.0'
     }
 }
 
@@ -47,7 +46,6 @@ allprojects {
     group 'com.palantir.gradle.auto-parallelizable'
     version System.env.CIRCLE_TAG ?: rootProject.version
 
-    apply plugin: 'org.inferred.processors'
     apply plugin: 'com.palantir.java-format'
     apply plugin: 'com.palantir.jakarta-package-alignment'
 }
