@@ -44,6 +44,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class CheckedInTests {
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("package (?<package>[\\w.]+);");
 
+    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     @ParameterizedTest
     @MethodSource("allCheckedInTests")
     void checked_in_tests(Path testRoot) {
@@ -101,6 +102,7 @@ class CheckedInTests {
         return childrenOf(Paths.get("src/test/resources"));
     }
 
+    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     private static List<Path> childrenOf(Path directory) {
         try (Stream<Path> children = Files.list(directory)) {
             return children.collect(Collectors.toList());
@@ -125,6 +127,7 @@ class CheckedInTests {
         return matcher.group("package") + "." + path.getFileName().toString().replace(".java", "");
     }
 
+    @SuppressWarnings("for-rollout:PreferUncheckedIoException")
     private static String readString(Path path) {
         try {
             return Files.readString(path);
