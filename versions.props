@@ -3,7 +3,7 @@ org.junit.jupiter:* = 5.13.4
 org.assertj:assertj-core = 3.27.3
 com.google.testing.compile:* = 0.21.0
 com.google.auto.service:* = 1.1.1
-com.palantir.goethe:* = 0.15.0
+com.palantir.goethe:* = 0.16.0
 
 
 # conflict resolution
