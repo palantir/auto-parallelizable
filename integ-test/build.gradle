@@ -14,6 +14,5 @@ dependencies {
 }
 
 gradleTestUtils {
-    gradleVersions = ['8.14.3']
     configurationCacheEnabled = true
 }
