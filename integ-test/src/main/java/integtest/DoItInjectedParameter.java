@@ -30,9 +30,11 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.work.DisableCachingByDefault;
 
 @AutoParallelizable
 public final class DoItInjectedParameter {
+    @DisableCachingByDefault(because = "Not opting into build caching; explicit opt-out is required by Gradle 9.7")
     public abstract static class DoItInjectedParameterTask extends DoItInjectedParameterTaskImpl {
         public DoItInjectedParameterTask() {
             setDescription("lol");
