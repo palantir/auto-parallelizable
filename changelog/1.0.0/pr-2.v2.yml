@@ -1,5 +1,0 @@
-type: feature
-feature:
-  description: Initial implementation.
-  links:
-  - https://github.com/palantir/auto-parallelizable/pull/2
