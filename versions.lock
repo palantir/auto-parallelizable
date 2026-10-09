@@ -4,11 +4,11 @@ com.google.auto:auto-common:1.2.2 (1 constraints: 181210fb)
 
 com.google.auto.service:auto-service-annotations:1.1.1 (1 constraints: 0505f435)
 
-com.google.errorprone:error_prone_annotations:2.41.0 (3 constraints: 0c1aa054)
+com.google.errorprone:error_prone_annotations:2.50.0 (3 constraints: 0c1aa154)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
-com.google.guava:guava:33.5.0-jre (5 constraints: 8b62b4ec)
+com.google.guava:guava:33.7.2-jre (5 constraints: 886289ea)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
@@ -20,7 +20,7 @@ com.palantir.javapoet:javapoet:0.20.0 (1 constraints: f20b5af7)
 
 com.squareup:javapoet:1.13.0 (1 constraints: f50b65f7)
 
-org.jspecify:jspecify:1.0.0 (10 constraints: 009a0576)
+org.jspecify:jspecify:1.0.1 (10 constraints: 029a0679)
 
 
 
@@ -28,9 +28,9 @@ org.jspecify:jspecify:1.0.0 (10 constraints: 009a0576)
 
 cglib:cglib-nodep:3.2.2 (1 constraints: 490ded24)
 
-com.google.auto.value:auto-value-annotations:1.11.0 (2 constraints: d01cd319)
+com.google.auto.value:auto-value-annotations:1.11.1 (2 constraints: d11cf419)
 
-com.google.testing.compile:compile-testing:0.23.0 (1 constraints: 3705303b)
+com.google.testing.compile:compile-testing:0.24.0 (1 constraints: 3805333b)
 
 com.google.truth:truth:1.4.5 (1 constraints: 1d1219fb)
 
