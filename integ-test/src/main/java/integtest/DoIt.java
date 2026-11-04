@@ -28,6 +28,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.work.DisableCachingByDefault;
 
 @AutoParallelizable
@@ -46,12 +48,14 @@ public final class DoIt {
         @OutputFile
         RegularFileProperty getFileValue();
 
+        @PathSensitive(PathSensitivity.ABSOLUTE)
         @InputDirectory
         DirectoryProperty getDirValue();
 
         @Input
         SetProperty<Integer> getIntsValue();
 
+        @PathSensitive(PathSensitivity.ABSOLUTE)
         @InputFiles
         ConfigurableFileCollection getFilesValue();
 

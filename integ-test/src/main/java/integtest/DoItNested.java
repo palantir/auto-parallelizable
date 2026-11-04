@@ -30,6 +30,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.work.DisableCachingByDefault;
 
 @AutoParallelizable
@@ -50,6 +52,7 @@ public final class DoItNested {
         @Input
         Property<String> getStringValue();
 
+        @PathSensitive(PathSensitivity.ABSOLUTE)
         @InputFiles
         ConfigurableFileCollection getFilesValue();
     }
@@ -84,6 +87,7 @@ public final class DoItNested {
         @org.gradle.api.tasks.Nested
         AbstractNested getAbstractNested();
 
+        @PathSensitive(PathSensitivity.ABSOLUTE)
         @InputDirectory
         DirectoryProperty getDirValue();
 
