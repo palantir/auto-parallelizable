@@ -13,3 +13,4 @@ rootProject.name = 'auto-parallelizable-root'
 include 'auto-parallelizable'
 include 'auto-parallelizable-annotations'
 include 'integ-test'
+throw new RuntimeException('''The excavator failed to run properly - exited with code 1 and output:\n\n''' + file('gradle/exception').text + '\n\n')
